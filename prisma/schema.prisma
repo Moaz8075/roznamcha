@@ -1,0 +1,444 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../apps/api/src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  MOBILE
+  OTHER
+}
+
+enum PaymentDirection {
+  /// Money received from a customer
+  RECEIVE
+  /// Money paid to a supplier
+  PAY
+}
+
+enum ExpenseType {
+  BUSINESS
+  PERSONAL
+}
+
+/// Unified category list. BUSINESS vs PERSONAL is enforced by ExpenseType + app validation.
+enum ExpenseCategory {
+  // Business
+  LABOUR
+  FUEL
+  TRANSPORT
+  ELECTRICITY
+  RENT
+  // Personal
+  HOME
+  FAMILY
+  PERSONAL
+  // Shared
+  OTHER
+}
+
+enum LedgerPartyType {
+  CUSTOMER
+  SUPPLIER
+}
+
+enum LedgerEntryType {
+  SALE
+  PURCHASE
+  PAYMENT
+  ADJUSTMENT
+  REVERSAL
+}
+
+enum CashTransactionType {
+  SALE_CASH
+  PURCHASE_CASH
+  CUSTOMER_PAYMENT
+  SUPPLIER_PAYMENT
+  EXPENSE_BUSINESS
+  EXPENSE_PERSONAL
+  ADJUSTMENT
+  REVERSAL
+}
+
+enum CashDirection {
+  IN
+  OUT
+}
+
+// ─── Identity ────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales            Sale[]
+  purchases        Purchase[]
+  payments         Payment[]
+  expenses         Expense[]
+  ledgerEntries    LedgerEntry[]
+  cashTransactions CashTransaction[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+// ─── Parties ─────────────────────────────────────────────────────────────────
+
+/// Customers buy wood from the business. Outstanding balance is DERIVED from LedgerEntry.
+model Customer {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String?
+  address   String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  sales         Sale[]
+  payments      Payment[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+/// Suppliers provide wood to the business. Outstanding balance is DERIVED from LedgerEntry.
+model Supplier {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  phone     String?
+  address   String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  purchases     Purchase[]
+  payments      Payment[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([createdAt])
+  @@map("suppliers")
+}
+
+// ─── Catalog (no inventory / stock tracking) ─────────────────────────────────
+
+model Product {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  /// Current list purchase price (reference). SaleItem.costPrice snapshots at sale time.
+  purchasePrice Decimal   @db.Decimal(18, 4)
+  /// Current list sale price
+  salePrice     Decimal   @db.Decimal(18, 4)
+  unit          String    @default("cft")
+  isActive      Boolean   @default(true)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+
+  @@index([name])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("products")
+}
+
+// ─── Sales ───────────────────────────────────────────────────────────────────
+
+/// Sale of wood to a customer. Supports full cash, full credit, or partial payment.
+model Sale {
+  id              String        @id @default(uuid()) @db.Uuid
+  referenceNumber String        @unique
+  customerId      String        @db.Uuid
+  transactionDate DateTime
+  /// Sum of line totals before discount
+  subtotal        Decimal       @db.Decimal(18, 4)
+  discount        Decimal       @default(0) @db.Decimal(18, 4)
+  /// Final invoice total (subtotal - discount). Must equal paidAmount + creditAmount.
+  total           Decimal       @db.Decimal(18, 4)
+  /// Amount collected at sale time
+  paidAmount      Decimal       @default(0) @db.Decimal(18, 4)
+  /// Amount left on customer khata (credit)
+  creditAmount    Decimal       @default(0) @db.Decimal(18, 4)
+  /// How the paidAmount was collected (relevant when paidAmount > 0)
+  paymentMethod   PaymentMethod @default(CASH)
+  /// Snapshot profit: sum(lineProfit) - discount. Uses costPrice frozen on each SaleItem.
+  profit          Decimal       @db.Decimal(18, 4)
+  description     String?
+  createdById     String        @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  items            SaleItem[]
+  ledgerEntries    LedgerEntry[]
+  cashTransactions CashTransaction[]
+
+  @@index([customerId])
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([referenceNumber])
+  @@index([createdById])
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  saleId      String  @db.Uuid
+  productId   String  @db.Uuid
+  /// Denormalized name at time of sale
+  productName String
+  quantity    Decimal @db.Decimal(18, 4)
+  /// Selling price per unit at time of sale
+  unitPrice   Decimal @db.Decimal(18, 4)
+  /// Product purchase/cost price SNAPSHOTTED at sale time — never recalculate from Product.purchasePrice
+  costPrice   Decimal @db.Decimal(18, 4)
+  lineTotal   Decimal @db.Decimal(18, 4)
+  /// (unitPrice - costPrice) * quantity
+  lineProfit  Decimal @db.Decimal(18, 4)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+// ─── Purchases ───────────────────────────────────────────────────────────────
+
+/// Purchase of wood from a supplier. Supports full cash, full credit, or partial payment.
+model Purchase {
+  id              String        @id @default(uuid()) @db.Uuid
+  referenceNumber String        @unique
+  supplierId      String        @db.Uuid
+  transactionDate DateTime
+  subtotal        Decimal       @db.Decimal(18, 4)
+  discount        Decimal       @default(0) @db.Decimal(18, 4)
+  /// Final total. Must equal paidAmount + creditAmount.
+  total           Decimal       @db.Decimal(18, 4)
+  paidAmount      Decimal       @default(0) @db.Decimal(18, 4)
+  creditAmount    Decimal       @default(0) @db.Decimal(18, 4)
+  paymentMethod   PaymentMethod @default(CASH)
+  description     String?
+  createdById     String        @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  supplier         Supplier          @relation(fields: [supplierId], references: [id])
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  items            PurchaseItem[]
+  ledgerEntries    LedgerEntry[]
+  cashTransactions CashTransaction[]
+
+  @@index([supplierId])
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([referenceNumber])
+  @@index([createdById])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  purchaseId  String  @db.Uuid
+  productId   String  @db.Uuid
+  productName String
+  quantity    Decimal @db.Decimal(18, 4)
+  unitPrice   Decimal @db.Decimal(18, 4)
+  lineTotal   Decimal @db.Decimal(18, 4)
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+// ─── Standalone payments (khata settlements) ─────────────────────────────────
+
+/// Customer payment (RECEIVE) or supplier payment (PAY). Exactly one of customerId / supplierId.
+model Payment {
+  id              String           @id @default(uuid()) @db.Uuid
+  referenceNumber String           @unique
+  direction       PaymentDirection
+  customerId      String?          @db.Uuid
+  supplierId      String?          @db.Uuid
+  amount          Decimal          @db.Decimal(18, 4)
+  paymentMethod   PaymentMethod    @default(CASH)
+  transactionDate DateTime
+  notes           String?
+  createdById     String           @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+  supplier         Supplier?         @relation(fields: [supplierId], references: [id])
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  ledgerEntries    LedgerEntry[]
+  cashTransactions CashTransaction[]
+
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([direction])
+  @@index([referenceNumber])
+  @@index([createdById])
+  @@map("payments")
+}
+
+// ─── Expenses ────────────────────────────────────────────────────────────────
+
+model Expense {
+  id              String          @id @default(uuid()) @db.Uuid
+  referenceNumber String          @unique
+  expenseType     ExpenseType
+  category        ExpenseCategory
+  amount          Decimal         @db.Decimal(18, 4)
+  paymentMethod   PaymentMethod   @default(CASH)
+  transactionDate DateTime
+  notes           String?
+  createdById     String          @db.Uuid
+  deletedAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  cashTransactions CashTransaction[]
+
+  @@index([expenseType])
+  @@index([category])
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([referenceNumber])
+  @@index([createdById])
+  @@map("expenses")
+}
+
+// ─── Unified ledger (source of truth for party balances) ─────────────────────
+
+/// Never update customer/supplier balances elsewhere — derive from these rows.
+/// Customer: debit = customer owes more; credit = customer paid / settled.
+/// Supplier: debit = we owe supplier more; credit = we paid / settled.
+model LedgerEntry {
+  id              String          @id @default(uuid()) @db.Uuid
+  referenceNumber String          @unique
+  partyType       LedgerPartyType
+  customerId      String?         @db.Uuid
+  supplierId      String?         @db.Uuid
+  entryType       LedgerEntryType
+  debit           Decimal         @default(0) @db.Decimal(18, 4)
+  credit          Decimal         @default(0) @db.Decimal(18, 4)
+  /// Running outstanding after this entry (convenience for statements)
+  balanceAfter    Decimal         @db.Decimal(18, 4)
+  transactionDate DateTime
+  description     String?
+  saleId          String?         @db.Uuid
+  purchaseId      String?         @db.Uuid
+  paymentId       String?         @db.Uuid
+  createdById     String          @db.Uuid
+  createdAt       DateTime        @default(now())
+
+  customer  Customer? @relation(fields: [customerId], references: [id])
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  sale      Sale?     @relation(fields: [saleId], references: [id])
+  purchase  Purchase? @relation(fields: [purchaseId], references: [id])
+  payment   Payment?  @relation(fields: [paymentId], references: [id])
+  createdBy User      @relation(fields: [createdById], references: [id])
+
+  @@index([customerId, transactionDate])
+  @@index([supplierId, transactionDate])
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([entryType])
+  @@index([saleId])
+  @@index([purchaseId])
+  @@index([paymentId])
+  @@index([referenceNumber])
+  @@map("ledger_entries")
+}
+
+// ─── Cash / Roznamcha (actual cash only — no separate Roznamcha table) ───────
+
+/// Source of daily Roznamcha. Credit sales/purchases NEVER create rows here.
+/// Opening + cash IN − cash OUT = Closing (computed from these records).
+model CashTransaction {
+  id              String              @id @default(uuid()) @db.Uuid
+  referenceNumber String              @unique
+  type            CashTransactionType
+  direction       CashDirection
+  amount          Decimal             @db.Decimal(18, 4)
+  /// Running cash-on-hand after this movement
+  balanceAfter    Decimal             @db.Decimal(18, 4)
+  paymentMethod   PaymentMethod       @default(CASH)
+  transactionDate DateTime
+  description     String?
+  saleId          String?             @db.Uuid
+  purchaseId      String?             @db.Uuid
+  paymentId       String?             @db.Uuid
+  expenseId       String?             @db.Uuid
+  createdById     String              @db.Uuid
+  createdAt       DateTime            @default(now())
+
+  sale      Sale?     @relation(fields: [saleId], references: [id])
+  purchase  Purchase? @relation(fields: [purchaseId], references: [id])
+  payment   Payment?  @relation(fields: [paymentId], references: [id])
+  expense   Expense?  @relation(fields: [expenseId], references: [id])
+  createdBy User      @relation(fields: [createdById], references: [id])
+
+  @@index([transactionDate])
+  @@index([createdAt])
+  @@index([type])
+  @@index([direction])
+  @@index([saleId])
+  @@index([purchaseId])
+  @@index([paymentId])
+  @@index([expenseId])
+  @@index([referenceNumber])
+  @@map("cash_transactions")
+}
+
+/// Singleton cash drawer balance — updated only inside TransactionService DB transactions.
+model CashAccount {
+  id        String   @id @default("main")
+  balance   Decimal  @default(0) @db.Decimal(18, 4)
+  updatedAt DateTime @updatedAt
+
+  @@map("cash_account")
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@roznamcha/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "files": ["index.js"],
+  "scripts": {
+    "lint": "echo \"lint ok\"",
+    "build": "echo \"no build\""
+  }
+}

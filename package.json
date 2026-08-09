@@ -1,0 +1,37 @@
+{
+  "name": "roznamcha",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "turbo run dev --filter=@roznamcha/api --filter=@roznamcha/mobile --filter=@roznamcha/constants --filter=@roznamcha/types --filter=@roznamcha/validation --filter=@roznamcha/api-client --filter=@roznamcha/config",
+    "dev:all": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@roznamcha/api --filter=@roznamcha/constants --filter=@roznamcha/types --filter=@roznamcha/api-client",
+    "dev:mobile": "pnpm --filter @roznamcha/mobile dev",
+    "dev:web": "pnpm --filter @roznamcha/web dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "prisma generate --schema=prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:seed": "pnpm --filter @roznamcha/api exec node ../../prisma/seed/seed.js",
+    "db:studio": "prisma studio --schema=prisma/schema.prisma",
+    "db:push": "prisma db push --schema=prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=prisma/schema.prisma",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@prisma/client": "6.19.3",
+    "prisma": "6.19.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "overrides": {
+      "react-native-css-interop": "0.1.22"
+    }
+  }
+}

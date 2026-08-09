@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: roznamcha-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: roznamcha
+      POSTGRES_PASSWORD: roznamcha
+      POSTGRES_DB: roznamcha
+    volumes:
+      - roznamcha_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roznamcha -d roznamcha"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  roznamcha_pg_data:
