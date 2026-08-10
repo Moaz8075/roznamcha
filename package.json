@@ -19,8 +19,8 @@
     "db:studio": "prisma studio --schema=prisma/schema.prisma",
     "db:push": "prisma db push --schema=prisma/schema.prisma",
     "api:start": "pnpm --filter @roznamcha/api start",
-    "api:build": "pnpm turbo build --filter=@roznamcha/api",
-    "render:build": "pnpm install --frozen-lockfile && pnpm db:generate && pnpm api:build",
+    "api:build": "turbo run build --filter=@roznamcha/api",
+    "render:build": "pnpm install --frozen-lockfile --prod=false && pnpm db:generate && pnpm api:build",
     "postinstall": "prisma generate --schema=prisma/schema.prisma",
     "clean": "turbo run clean && rm -rf node_modules"
   },

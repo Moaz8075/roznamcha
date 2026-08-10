@@ -111,6 +111,8 @@ In the Render service → **Settings** → **Build & Deploy**, set:
 npm install -g pnpm@9.15.0 && pnpm run render:build
 ```
 
+`render:build` installs **including devDependencies** (`turbo`, Nest CLI) even when Render sets `NODE_ENV=production`.
+
 **Start Command:**
 
 ```bash
