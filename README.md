@@ -121,7 +121,7 @@ pnpm db:migrate && pnpm api:start
 
 Then **Manual Deploy** → Clear build cache & deploy (or push a new commit).
 
-Env vars: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`. Render injects `PORT`.
+Env vars: `DATABASE_URL`, `JWT_SECRET`. Render injects `PORT`.
 
 ## Start mobile
 
