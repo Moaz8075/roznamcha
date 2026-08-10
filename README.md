@@ -99,23 +99,27 @@ pnpm --filter @roznamcha/api dev
 
 ## Deploy API (Render)
 
-Root directory: **repo root** (monorepo).
+Root directory: **repo root** (leave blank / `.`).
 
-Do **not** use `corepack enable` on Render — it tries to write `/usr/bin/pnpm` and fails with `EROFS: read-only file system`.
+Do **not** use `corepack enable` on Render — it fails with `EROFS: read-only file system`.
 
-**Build command:**
+In the Render service → **Settings** → **Build & Deploy**, set:
+
+**Build Command** (replace the old one entirely):
 
 ```bash
-npm install -g pnpm@9.15.0 && pnpm install --frozen-lockfile && pnpm db:generate && pnpm api:build
+npm install -g pnpm@9.15.0 && pnpm run render:build
 ```
 
-**Start command:**
+**Start Command:**
 
 ```bash
 pnpm db:migrate && pnpm api:start
 ```
 
-Set env vars: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`. Render injects `PORT` (see `apps/api/src/main.ts`).
+Then **Manual Deploy** → Clear build cache & deploy (or push a new commit).
+
+Env vars: `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`. Render injects `PORT`.
 
 ## Start mobile
 

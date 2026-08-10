@@ -1,0 +1,23 @@
+# Optional Blueprint — or paste the same commands in the Render dashboard.
+# Root Directory must be the repo root (leave blank / `.`).
+services:
+  - type: web
+    name: roznamcha-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install -g pnpm@9.15.0 && pnpm run render:build
+    startCommand: pnpm db:migrate && pnpm api:start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
