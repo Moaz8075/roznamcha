@@ -49,7 +49,7 @@ createuser roznamcha -P   # password: roznamcha
 createdb -O roznamcha roznamcha
 ```
 
-Grant `CREATEDB` to the role if you use `pnpm db:migrate` (Prisma needs a shadow database). Alternatively use `pnpm db:push` for local prototyping.
+Grant `CREATEDB` to the role if you use `pnpm db:migrate:dev` (Prisma needs a shadow database). Alternatively use `pnpm db:push` for local prototyping.
 
 ## Environment setup
 
@@ -69,7 +69,7 @@ cp .env.example apps/api/.env
 
 ```bash
 pnpm db:generate
-pnpm db:migrate
+pnpm db:migrate:dev
 ```
 
 When prompted for a migration name, use something like `init`.
@@ -96,6 +96,24 @@ pnpm --filter @roznamcha/api dev
 
 - API: http://localhost:3001/api/v1
 - Swagger: http://localhost:3001/api/docs
+
+## Deploy API (Render)
+
+Root directory: repo root (monorepo).
+
+**Build command** (example):
+
+```bash
+pnpm install && pnpm --filter @roznamcha/api build
+```
+
+**Start command:**
+
+```bash
+pnpm db:migrate && pnpm api:start
+```
+
+Set `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, and rely on Render’s `PORT` (see `apps/api/src/main.ts`).
 
 ## Start mobile
 

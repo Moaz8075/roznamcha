@@ -38,6 +38,8 @@ interface AuthState {
   isLoading: boolean;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -89,9 +91,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, [token]);
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
+    const api = createApi(() => token);
+    const me = await api.auth.me();
+    setUser(me);
+  }, [token]);
+
   const value = useMemo(
-    () => ({ token, user, isLoading, login, logout }),
-    [token, user, isLoading, login, logout],
+    () => ({
+      token,
+      user,
+      isLoading,
+      login,
+      logout,
+      refreshUser,
+      setUser,
+    }),
+    [token, user, isLoading, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

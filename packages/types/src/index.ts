@@ -265,6 +265,14 @@ export interface CreateCustomerRequest {
   notes?: string;
 }
 
+export interface UpdateCustomerRequest {
+  name?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  isActive?: boolean;
+}
+
 export interface CreateSupplierRequest {
   name: string;
   phone?: string;
@@ -272,11 +280,37 @@ export interface CreateSupplierRequest {
   notes?: string;
 }
 
+export interface UpdateSupplierRequest {
+  name?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  isActive?: boolean;
+}
+
 export interface CreateProductRequest {
   name: string;
   unit?: string;
   salePrice: MoneyString;
   purchasePrice: MoneyString;
+}
+
+export interface UpdateProductRequest {
+  name?: string;
+  unit?: string;
+  salePrice?: MoneyString;
+  purchasePrice?: MoneyString;
+  isActive?: boolean;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface SaleItemInput {

@@ -1,6 +1,7 @@
 import type {
   ApiResponse,
   AuthUser,
+  ChangePasswordRequest,
   CreateCustomerRequest,
   CreateExpenseRequest,
   CreatePaymentRequest,
@@ -21,6 +22,10 @@ import type {
   SupplierDto,
   LedgerEntryDto,
   RoznamchaSummaryDto,
+  UpdateCustomerRequest,
+  UpdateProductRequest,
+  UpdateProfileRequest,
+  UpdateSupplierRequest,
 } from '@roznamcha/types';
 
 export type TokenProvider = () => string | null | Promise<string | null>;
@@ -104,6 +109,16 @@ export function createApiClient(options: ApiClientOptions) {
           body: JSON.stringify(payload),
         }),
       me: () => request<AuthUser>('/auth/me'),
+      updateProfile: (payload: UpdateProfileRequest) =>
+        request<AuthUser>('/auth/me', {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }),
+      changePassword: (payload: ChangePasswordRequest) =>
+        request<{ ok: true }>('/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
       logout: () =>
         request<{ ok: true }>('/auth/logout', { method: 'POST' }),
     },
@@ -118,6 +133,13 @@ export function createApiClient(options: ApiClientOptions) {
           method: 'POST',
           body: JSON.stringify(payload),
         }),
+      update: (id: string, payload: UpdateCustomerRequest) =>
+        request<CustomerDto>(`/customers/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }),
+      remove: (id: string) =>
+        request<CustomerDto>(`/customers/${id}`, { method: 'DELETE' }),
     },
     suppliers: {
       list: (q?: string) =>
@@ -130,6 +152,13 @@ export function createApiClient(options: ApiClientOptions) {
           method: 'POST',
           body: JSON.stringify(payload),
         }),
+      update: (id: string, payload: UpdateSupplierRequest) =>
+        request<SupplierDto>(`/suppliers/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }),
+      remove: (id: string) =>
+        request<SupplierDto>(`/suppliers/${id}`, { method: 'DELETE' }),
     },
     products: {
       list: (q?: string) =>
@@ -142,6 +171,13 @@ export function createApiClient(options: ApiClientOptions) {
           method: 'POST',
           body: JSON.stringify(payload),
         }),
+      update: (id: string, payload: UpdateProductRequest) =>
+        request<ProductDto>(`/products/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        }),
+      remove: (id: string) =>
+        request<ProductDto>(`/products/${id}`, { method: 'DELETE' }),
     },
     sales: {
       list: () => request<PaginatedData<SaleDto>>('/sales'),
