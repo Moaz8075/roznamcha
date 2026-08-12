@@ -291,8 +291,8 @@ export interface UpdateSupplierRequest {
 export interface CreateProductRequest {
   name: string;
   unit?: string;
-  salePrice: MoneyString;
-  purchasePrice: MoneyString;
+  salePrice?: MoneyString;
+  purchasePrice?: MoneyString;
 }
 
 export interface UpdateProductRequest {

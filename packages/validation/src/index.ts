@@ -51,8 +51,8 @@ export const createSupplierSchema = z.object({
 export const createProductSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
   unit: z.string().trim().max(30).default('cft'),
-  salePrice: moneySchema,
-  purchasePrice: moneySchema,
+  salePrice: optionalMoneySchema,
+  purchasePrice: optionalMoneySchema,
 });
 
 export const saleItemSchema = z.object({

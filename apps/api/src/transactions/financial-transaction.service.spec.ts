@@ -431,6 +431,21 @@ describe('FinancialTransactionService', () => {
       );
       expect(prisma._state.cash.at(-1)?.direction).toBe(CashDirection.OUT);
     });
+
+    it('allows paying a supplier even when cash on hand is zero', async () => {
+      const result = await service.createPayment({
+        direction: PaymentDirection.PAY,
+        supplierId: SUPPLIER,
+        amount: '250',
+        paymentMethod: PaymentMethod.CASH,
+        createdById: USER,
+      });
+
+      expect(result.cashBalance).toBe('-250.0000');
+      expect(prisma._state.cash.at(-1)?.type).toBe(
+        CashTransactionType.SUPPLIER_PAYMENT,
+      );
+    });
   });
 
   describe('Business Expense', () => {

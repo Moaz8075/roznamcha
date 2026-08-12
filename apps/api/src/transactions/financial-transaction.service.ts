@@ -87,12 +87,17 @@ type DecimalLike = ReturnType<typeof d>;
 export class FinancialTransactionService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Neon/pooler round-trips need more than Prisma's 5s default. */
+  private runTx<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    return this.prisma.$transaction(fn, { maxWait: 20_000, timeout: 60_000 });
+  }
+
   async createSale(input: CreateSaleInput) {
     if (!input.items?.length) {
       throw new BadRequestException('Add at least one item');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.runTx(async (tx) => {
       const customer = await tx.customer.findFirst({
         where: { id: input.customerId, deletedAt: null, isActive: true },
       });
@@ -240,7 +245,7 @@ export class FinancialTransactionService {
       throw new BadRequestException('Add at least one item');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.runTx(async (tx) => {
       const supplier = await tx.supplier.findFirst({
         where: { id: input.supplierId, deletedAt: null, isActive: true },
       });
@@ -375,7 +380,7 @@ export class FinancialTransactionService {
   async createPayment(input: CreatePaymentInput) {
     const amount = assertPositiveMoney(input.amount);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.runTx(async (tx) => {
       const date = input.transactionDate ?? new Date();
       const paymentMethod = input.paymentMethod ?? PaymentMethod.CASH;
       const count = await tx.payment.count();
@@ -511,7 +516,7 @@ export class FinancialTransactionService {
     const amount = assertPositiveMoney(input.amount);
     this.assertExpenseCategory(input.expenseType, input.category);
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.runTx(async (tx) => {
       const date = input.transactionDate ?? new Date();
       const paymentMethod = input.paymentMethod ?? PaymentMethod.CASH;
       const count = await tx.expense.count();
@@ -758,10 +763,6 @@ export class FinancialTransactionService {
     const delta =
       params.direction === CashDirection.IN ? params.amount : params.amount.neg();
     const balanceAfter = current.plus(delta);
-
-    if (balanceAfter.lt(0)) {
-      throw new BadRequestException('Not enough cash for this transaction');
-    }
 
     await tx.cashAccount.update({
       where: { id: 'main' },

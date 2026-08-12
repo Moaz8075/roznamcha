@@ -20,6 +20,7 @@ export default function AppLayout() {
   return (
     <Stack
       screenOptions={{
+        headerShown: false,
         headerStyle: { backgroundColor: '#FBF9F3' },
         headerTitleStyle: { fontSize: 18, fontWeight: '700', color: '#12211B' },
         headerShadowVisible: false,
@@ -28,17 +29,17 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: '#FBF9F3' },
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="more" options={{ headerShown: false, title: 'Profile' }} />
-      <Stack.Screen name="customers/[id]" options={{ headerShown: false, title: 'Customer' }} />
-      <Stack.Screen name="suppliers/[id]" options={{ headerShown: false, title: 'Supplier' }} />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="more" options={{ title: 'Profile' }} />
+      <Stack.Screen name="customers/[id]" options={{ title: 'Customer' }} />
+      <Stack.Screen name="suppliers/[id]" options={{ title: 'Supplier' }} />
       <Stack.Screen name="products" options={{ title: 'Products' }} />
-      <Stack.Screen name="sales/new" options={{ title: 'New Sale' }} />
-      <Stack.Screen name="sales/[id]" options={{ headerShown: false, title: 'Invoice' }} />
-      <Stack.Screen name="purchases/new" options={{ title: 'New Purchase' }} />
-      <Stack.Screen name="payments" options={{ title: 'Payments' }} />
-      <Stack.Screen name="expenses" options={{ headerShown: false, title: 'Expenses' }} />
-      <Stack.Screen name="reports" options={{ title: 'Reports' }} />
+      <Stack.Screen name="sales/new" options={{ headerShown: true, title: 'New Sale' }} />
+      <Stack.Screen name="sales/[id]" options={{ title: 'Invoice' }} />
+      <Stack.Screen name="purchases/new" options={{ headerShown: true, title: 'New Purchase' }} />
+      <Stack.Screen name="payments" options={{ headerShown: true, title: 'Payments' }} />
+      <Stack.Screen name="expenses" options={{ title: 'Expenses' }} />
+      <Stack.Screen name="reports" options={{ headerShown: true, title: 'Reports' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );

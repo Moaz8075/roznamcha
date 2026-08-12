@@ -3,7 +3,7 @@
   "slug": "roznamcha",
   "version": "1.0.0",
   "orientation": "portrait",
-  "icon": "./assets/icon-mark.png",
+  "icon": "./assets/icon.png",
   "scheme": "roznamcha",
   "userInterfaceStyle": "light",
   "newArchEnabled": false,
@@ -18,7 +18,7 @@
   },
   "android": {
     "adaptiveIcon": {
-      "foregroundImage": "./assets/icon-mark.png",
+      "foregroundImage": "./assets/adaptive-icon.png",
       "backgroundColor": "#FFFFFF"
     },
     "package": "com.roznamcha.app",

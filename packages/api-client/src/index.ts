@@ -111,12 +111,12 @@ export function createApiClient(options: ApiClientOptions) {
     const body = await parseJson<T>(res);
 
     if (!res.ok || body.success === false) {
-      const errBody = body as { message?: string; errors?: Record<string, string[]> };
-      throw new ApiError(
-        errBody.message ?? `Request failed (${res.status})`,
-        res.status,
-        errBody.errors,
-      );
+      const errBody = body as { message?: string | string[]; errors?: Record<string, string[]> };
+      const raw = errBody.message;
+      const message = Array.isArray(raw)
+        ? raw[0] ?? `Request failed (${res.status})`
+        : raw ?? `Request failed (${res.status})`;
+      throw new ApiError(message, res.status, errBody.errors);
     }
 
     return (body as { success: true; data: T }).data;

@@ -20,10 +20,9 @@ import { AppHeader } from '../../src/components/AppHeader';
 import { Field } from '../../src/components/Field';
 import { BigButton } from '../../src/components/BigButton';
 import { SuccessModal } from '../../src/components/SuccessModal';
-import { formatMoney } from '../../src/lib/format';
 
 function emptyForm() {
-  return { name: '', unit: 'cft', salePrice: '', purchasePrice: '' };
+  return { name: '', unit: 'cft' };
 }
 
 export default function ProductsScreen() {
@@ -59,8 +58,6 @@ export default function ProductsScreen() {
     setForm({
       name: item.name,
       unit: item.unit || 'cft',
-      salePrice: String(Number(item.salePrice)),
-      purchasePrice: String(Number(item.purchasePrice)),
     });
     setFormOpen(true);
   };
@@ -70,8 +67,6 @@ export default function ProductsScreen() {
       const payload = {
         name: form.name.trim(),
         unit: form.unit.trim() || 'cft',
-        salePrice: form.salePrice.trim(),
-        purchasePrice: form.purchasePrice.trim(),
       };
       if (editing) {
         return api.products.update(editing.id, payload);
@@ -109,10 +104,7 @@ export default function ProductsScreen() {
   };
 
   const items = data?.items ?? [];
-  const canSave =
-    form.name.trim().length > 0 &&
-    form.salePrice.trim().length > 0 &&
-    form.purchasePrice.trim().length > 0;
+  const canSave = form.name.trim().length > 0;
 
   return (
     <Screen className="bg-[#FBF9F3]">
@@ -148,10 +140,7 @@ export default function ProductsScreen() {
         renderItem={({ item }) => (
           <View className="rounded-3xl bg-[#F3EEE3] px-4 py-4">
             <Text className="text-[17px] font-bold text-ink">{item.name}</Text>
-            <Text className="mt-1 text-body text-ink/55">
-              Sale {formatMoney(item.salePrice)} · Cost {formatMoney(item.purchasePrice)} /{' '}
-              {item.unit}
-            </Text>
+            <Text className="mt-1 text-body text-ink/55">{item.unit}</Text>
             <View className="mt-3 flex-row gap-2">
               <Pressable
                 onPress={() => openEdit(item)}
@@ -200,18 +189,6 @@ export default function ProductsScreen() {
               label="Unit"
               value={form.unit}
               onChangeText={(unit) => setForm((f) => ({ ...f, unit }))}
-            />
-            <Field
-              label="Sale price"
-              value={form.salePrice}
-              onChangeText={(salePrice) => setForm((f) => ({ ...f, salePrice }))}
-              keyboardType="decimal-pad"
-            />
-            <Field
-              label="Purchase / cost price"
-              value={form.purchasePrice}
-              onChangeText={(purchasePrice) => setForm((f) => ({ ...f, purchasePrice }))}
-              keyboardType="decimal-pad"
             />
             <BigButton
               label={editing ? 'Save changes' : 'Save product'}

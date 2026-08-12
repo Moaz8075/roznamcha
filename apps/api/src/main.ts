@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/prisma-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -19,7 +21,16 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       // Do NOT enable implicit conversion: money fields are strings ("200.00").
-      // Converting them to numbers makes @IsString()/@Matches fail on products/payments.
+      exceptionFactory: (errors) => {
+        const messages = errors.flatMap((err) => {
+          const own = Object.values(err.constraints ?? {});
+          const nested = (err.children ?? []).flatMap((child) =>
+            Object.values(child.constraints ?? {}),
+          );
+          return [...own, ...nested];
+        });
+        return new BadRequestException(messages[0] ?? 'Invalid request');
+      },
     }),
   );
 
