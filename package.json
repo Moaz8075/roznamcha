@@ -21,6 +21,7 @@
     "api:start": "pnpm --filter @roznamcha/api start",
     "api:build": "turbo run build --filter=@roznamcha/api",
     "render:build": "pnpm install --frozen-lockfile --prod=false && pnpm db:generate && pnpm api:build",
+    "mobile:packages:build": "pnpm --filter @roznamcha/constants build && pnpm --filter @roznamcha/types build && pnpm --filter @roznamcha/validation build && pnpm --filter @roznamcha/api-client build",
     "postinstall": "prisma generate --schema=prisma/schema.prisma",
     "clean": "turbo run clean && rm -rf node_modules"
   },

@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ExpenseCategory, ExpenseType, PaymentMethod } from '../../generated/prisma';
+import { ToMoneyString } from '../../common/to-money-string';
 
 const MONEY = /^\d+(\.\d{1,4})?$/;
 
@@ -24,6 +25,7 @@ export class CreateExpenseDto {
   category!: ExpenseCategory;
 
   @ApiProperty({ example: '200.00' })
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   amount!: string;

@@ -6,7 +6,7 @@
   "icon": "./assets/icon.png",
   "scheme": "roznamcha",
   "userInterfaceStyle": "light",
-  "newArchEnabled": true,
+  "newArchEnabled": false,
   "splash": {
     "image": "./assets/splash-icon.png",
     "resizeMode": "contain",
@@ -24,13 +24,31 @@
     "package": "com.roznamcha.app",
     "usesCleartextTraffic": true
   },
-  "plugins": ["expo-router", "expo-secure-store"],
+  "plugins": [
+  "expo-router",
+  "expo-secure-store",
+  "@react-native-community/datetimepicker",
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "kotlinVersion": "1.9.25",
+        "compileSdkVersion": 35,
+        "targetSdkVersion": 34,
+        "buildToolsVersion": "35.0.0"
+      }
+    }
+  ]
+],
   "experiments": {
     "typedRoutes": true
   },
   "extra": {
     "router": {
       "origin": false
+    },
+    "eas": {
+      "projectId": "d4d1641e-27be-4d13-9cd6-cffbabd3168b"
     }
   }
 }

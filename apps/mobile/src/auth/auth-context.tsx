@@ -11,6 +11,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AuthUser, LoginRequest } from '@roznamcha/types';
+import { ApiError } from '@roznamcha/api-client';
 import { createApi } from '../lib/api';
 
 const TOKEN_KEY = 'roznamcha_token';
@@ -53,16 +54,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const stored = await loadToken();
-        if (stored) {
-          setToken(stored);
-          const api = createApi(() => stored);
-          const me = await api.auth.me();
-          setUser(me);
+        if (!stored) return;
+        setToken(stored);
+        const api = createApi(() => stored);
+        // Retry once — Render free tier may be cold-starting.
+        try {
+          setUser(await api.auth.me());
+        } catch {
+          await new Promise((r) => setTimeout(r, 2500));
+          setUser(await api.auth.me());
         }
-      } catch {
-        await saveToken(null);
-        setToken(null);
-        setUser(null);
+      } catch (err) {
+        // Only wipe session on real auth failure, not network / cold-start errors.
+        const unauthorized = err instanceof ApiError && err.statusCode === 401;
+        if (unauthorized) {
+          await saveToken(null);
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         setIsLoading(false);
       }

@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentDirection, PaymentMethod } from '../../generated/prisma';
+import { ToMoneyString } from '../../common/to-money-string';
 
 const MONEY = /^\d+(\.\d{1,4})?$/;
 
@@ -27,6 +28,7 @@ export class CreatePaymentDto {
   supplierId?: string;
 
   @ApiProperty({ example: '500.00' })
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   amount!: string;

@@ -123,13 +123,61 @@ Then **Manual Deploy** → Clear build cache & deploy (or push a new commit).
 
 Env vars: `DATABASE_URL`, `JWT_SECRET`. Render injects `PORT`.
 
-## Start mobile
+**Neon `DATABASE_URL` on Render** (fixes `P1001` cold-start timeouts):
 
-```bash
-pnpm --filter @roznamcha/mobile dev
+1. Neon dashboard → open **SQL Editor** once (wakes the DB).
+2. **Connect** → copy the **pooled** connection string.
+3. On Render → Environment → set `DATABASE_URL` to that string and append:
+   `&connect_timeout=30` (keep `sslmode=require`).
+
+Example shape:
+
+```text
+postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/neondb?sslmode=require&connect_timeout=30
 ```
 
-Set `EXPO_PUBLIC_API_URL` in `.env` to your machine LAN IP when testing on a physical device, e.g. `http://192.168.1.10:3001/api/v1`.
+“No open ports detected” during start is normal if migrate fails first — fix the DB URL and redeploy.
+
+## Android APK (points at Render API)
+
+1. Put your Render API base URL in `apps/mobile/eas.json` under `preview.env.EXPO_PUBLIC_API_URL`  
+   (and the same in `production.env`), e.g.:
+
+```text
+https://roznamcha-api.onrender.com/api/v1
+```
+
+   Must be **https**, and include `/api/v1`.
+
+2. From the repo (no global install needed — avoids `EACCES` on `/usr/local`):
+
+```bash
+cd apps/mobile
+pnpm install
+pnpm eas:login
+pnpm eas:configure
+pnpm build:apk
+```
+
+Or without installing eas locally first:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest login
+npx eas-cli@latest build:configure
+npx eas-cli@latest build -p android --profile preview
+```
+
+3. When the build finishes, open the Expo build URL → download the **APK** → install on the phone  
+   (allow “Install unknown apps” if needed).
+
+4. On first open, confirm login works against Render. Settings shows the API URL.
+
+**Notes**
+- Free Render services sleep; the first request after idle can be slow.
+- Expo Go still uses Metro/`localhost` unless you set `EXPO_PUBLIC_API_URL` for that session; the **APK** uses the URL baked in at build time.
+- For Play Store later, use `build:aab` (production profile).
+- EAS runs `eas-build-post-install` to compile workspace packages (`constants`, `types`, etc.) into `dist/` before bundling.
 
 ## Start everything (Turbo)
 

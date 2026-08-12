@@ -78,10 +78,31 @@ export function createApiClient(options: ApiClientOptions) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const res = await fetchFn(`${options.baseUrl}${path}`, {
-      ...init,
-      headers,
-    });
+    const controller = new AbortController();
+    const timeoutMs = 45_000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    let res: Response;
+    try {
+      res = await fetchFn(`${options.baseUrl}${path}`, {
+        ...init,
+        headers,
+        signal: init.signal ?? controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      const aborted =
+        (err instanceof Error && err.name === 'AbortError') ||
+        (typeof DOMException !== 'undefined' && err instanceof DOMException && err.name === 'AbortError');
+      throw new ApiError(
+        aborted
+          ? 'Server is taking too long (it may be waking up). Try again.'
+          : 'Could not reach the server. Check your connection.',
+        0,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (res.status === 401) {
       options.onUnauthorized?.();

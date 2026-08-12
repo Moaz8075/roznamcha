@@ -18,7 +18,8 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      transformOptions: { enableImplicitConversion: true },
+      // Do NOT enable implicit conversion: money fields are strings ("200.00").
+      // Converting them to numbers makes @IsString()/@Matches fail on products/payments.
     }),
   );
 

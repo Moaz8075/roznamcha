@@ -7,6 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ToMoneyString } from '../../common/to-money-string';
 
 const MONEY = /^\d+(\.\d{1,4})?$/;
 
@@ -26,12 +27,14 @@ export class UpdateProductDto {
 
   @ApiPropertyOptional({ example: '180.00' })
   @IsOptional()
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY, { message: 'salePrice must be a valid amount' })
   salePrice?: string;
 
   @ApiPropertyOptional({ example: '140.00' })
   @IsOptional()
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY, { message: 'purchasePrice must be a valid amount' })
   purchasePrice?: string;

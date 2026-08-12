@@ -12,6 +12,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '../../generated/prisma';
+import { ToMoneyString } from '../../common/to-money-string';
 
 const MONEY = /^\d+(\.\d{1,4})?$/;
 
@@ -21,11 +22,13 @@ export class SaleItemDto {
   productId!: string;
 
   @ApiProperty({ example: '10' })
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   quantity!: string;
 
   @ApiProperty({ example: '150.00' })
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   unitPrice!: string;
@@ -43,6 +46,7 @@ export class CreateSaleDto {
 
   @ApiPropertyOptional({ example: '0' })
   @IsOptional()
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   discount?: string;
@@ -52,6 +56,7 @@ export class CreateSaleDto {
     description: 'Amount collected now. Omit with creditAmount for full credit.',
   })
   @IsOptional()
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   paidAmount?: string;
@@ -61,6 +66,7 @@ export class CreateSaleDto {
     description: 'Amount on customer khata. If omitted, total − paidAmount.',
   })
   @IsOptional()
+  @ToMoneyString()
   @IsString()
   @Matches(MONEY)
   creditAmount?: string;
