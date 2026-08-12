@@ -1,9 +1,9 @@
 {
-  "name": "Roznamcha",
+  "name": "AB & Sons",
   "slug": "roznamcha",
   "version": "1.0.0",
   "orientation": "portrait",
-  "icon": "./assets/icon.png",
+  "icon": "./assets/icon-mark.png",
   "scheme": "roznamcha",
   "userInterfaceStyle": "light",
   "newArchEnabled": false,
@@ -18,7 +18,7 @@
   },
   "android": {
     "adaptiveIcon": {
-      "foregroundImage": "./assets/adaptive-icon.png",
+      "foregroundImage": "./assets/icon-mark.png",
       "backgroundColor": "#FFFFFF"
     },
     "package": "com.roznamcha.app",
