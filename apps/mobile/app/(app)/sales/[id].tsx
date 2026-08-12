@@ -1,7 +1,11 @@
-import { Alert, ScrollView, Share, Text, View, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRef } from 'react';
+import { Alert, ScrollView, Text, View, Pressable } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { useAuth } from '../../../src/auth/auth-context';
 import { createApi } from '../../../src/lib/api';
 import { Screen } from '../../../src/components/ui';
@@ -13,7 +17,7 @@ export default function SaleInvoiceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
   const api = createApi(() => token);
-  const router = useRouter();
+  const receiptRef = useRef<View>(null);
 
   const sale = useQuery({
     queryKey: ['sale', id],
@@ -24,26 +28,33 @@ export default function SaleInvoiceScreen() {
   const data = sale.data;
   const paidInFull = data ? Number(data.creditAmount) <= 0 : false;
 
-  const shareInvoice = async () => {
-    if (!data) return;
-    const lines = [
-      `Roznamcha Invoice ${data.referenceNumber}`,
-      `Customer: ${data.customerName}`,
-      `Date: ${formatDate(data.transactionDate)}`,
-      '',
-      ...data.items.map(
-        (i) =>
-          `${i.productName} · ${i.quantity} x ${formatMoney(i.unitPrice)} = ${formatMoney(i.lineTotal)}`,
-      ),
-      '',
-      `Total: ${formatMoney(data.total)}`,
-      `Paid: ${formatMoney(data.paidAmount)}`,
-      `Balance Due: ${formatMoney(data.creditAmount)}`,
-    ].join('\n');
+  const shareInvoiceImage = async () => {
+    if (!data || !receiptRef.current) return;
     try {
-      await Share.share({ message: lines });
+      const uri = await captureRef(receiptRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+      });
+      const cacheDir = FileSystem.cacheDirectory;
+      if (!cacheDir) {
+        Alert.alert('Could not share', 'Unable to save the invoice image.');
+        return;
+      }
+      const dest = `${cacheDir}Invoice-${data.referenceNumber}-${Date.now()}.png`;
+      await FileSystem.copyAsync({ from: uri, to: dest });
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Sharing unavailable', 'This device cannot open the share sheet.');
+        return;
+      }
+      await Sharing.shareAsync(dest, {
+        mimeType: 'image/png',
+        dialogTitle: 'Share Invoice',
+        UTI: 'public.png',
+      });
     } catch {
-      Alert.alert('Could not share', 'Unable to open the share sheet.');
+      Alert.alert('Could not share', 'Unable to create the invoice image.');
     }
   };
 
@@ -58,7 +69,11 @@ export default function SaleInvoiceScreen() {
           </Text>
         ) : (
           <>
-            <View className="rounded-3xl border border-[#E8E4DA] bg-white px-5 py-5">
+            <View
+              ref={receiptRef}
+              collapsable={false}
+              className="rounded-3xl border border-[#E8E4DA] bg-white px-5 py-5"
+            >
               <View className="mb-5 flex-row items-start justify-between">
                 <View className="flex-row items-center gap-3 pr-2" style={{ flex: 1 }}>
                   <BrandLogo width={88} height={64} />
@@ -102,7 +117,7 @@ export default function SaleInvoiceScreen() {
                     </Text>
                   </View>
                   <Text className="w-14 text-right text-body font-semibold text-ink">
-                    {Number(item.quantity)}
+                    {formatMoney(item.quantity)}
                   </Text>
                 </View>
               ))}
@@ -156,14 +171,14 @@ export default function SaleInvoiceScreen() {
 
             <View className="mt-2 gap-3">
               <Pressable
-                onPress={shareInvoice}
+                onPress={shareInvoiceImage}
                 className="min-h-[52px] flex-row items-center justify-center rounded-full bg-[#ECEAE3] active:opacity-90"
               >
                 <Ionicons name="share-outline" size={18} color="#12211B" />
                 <Text className="ml-2 text-body-lg font-semibold text-ink">Share Invoice</Text>
               </Pressable>
               <Pressable
-                onPress={shareInvoice}
+                onPress={shareInvoiceImage}
                 className="min-h-[52px] flex-row items-center justify-center rounded-full bg-brand active:opacity-90"
               >
                 <Ionicons name="print-outline" size={18} color="#fff" />

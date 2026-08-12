@@ -27,7 +27,7 @@ export function Body({ children, className = '', ...props }: TextProps & { class
 export function Money({ value, className = '' }: { value: string; className?: string }) {
   const n = Number(value);
   const formatted = Number.isFinite(n)
-    ? n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    ? Math.round(n).toLocaleString(undefined, { maximumFractionDigits: 0 })
     : value;
   return <Text className={`text-title text-brand ${className}`}>{formatted}</Text>;
 }

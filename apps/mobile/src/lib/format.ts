@@ -1,9 +1,9 @@
-export function formatMoney(value?: string | number, digits = 2) {
+export function formatMoney(value?: string | number) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return '—';
-  return n.toLocaleString(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
+  return Math.round(n).toLocaleString(undefined, {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
   });
 }
 
