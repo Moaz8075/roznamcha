@@ -74,20 +74,20 @@ export default function SaleInvoiceScreen() {
               collapsable={false}
               className="rounded-3xl border border-[#E8E4DA] bg-white px-5 py-5"
             >
-              <View className="mb-5 flex-row items-start justify-between">
-                <View className="flex-row items-center gap-3 pr-2" style={{ flex: 1 }}>
-                  <BrandLogo width={88} height={64} />
-                  <View className="flex-1">
-                    <Text className="text-body-lg font-bold text-ink">Arif Bilal and Son's</Text>
-                    <Text className="text-[13px] text-ink/45">Manufacturer & Suppliers</Text>
-                  </View>
+              <View className="mb-5 flex-row items-start justify-between gap-3">
+                <View style={{ flexShrink: 0, maxWidth: '55%' }}>
+                  <BrandLogo width={150} height={110} />
                 </View>
-                <View className="items-end">
+                <View className="shrink-0 items-end" style={{ maxWidth: '42%' }}>
                   <Text className="text-[12px] font-bold uppercase tracking-wide text-brand">
                     Invoice
                   </Text>
-                  <Text className="text-body-lg font-bold text-ink">#{data.referenceNumber}</Text>
-                  <Text className="text-body text-ink/55">{formatDate(data.transactionDate)}</Text>
+                  <Text className="text-right text-body-lg font-bold text-ink">
+                    #{data.referenceNumber}
+                  </Text>
+                  <Text className="text-right text-body text-ink/55">
+                    {formatDate(data.transactionDate)}
+                  </Text>
                 </View>
               </View>
 
