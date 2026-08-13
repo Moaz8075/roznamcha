@@ -36,7 +36,7 @@ export function AppHeader({
         className="h-11 w-11 items-center justify-center rounded-full active:bg-black/5"
         hitSlop={8}
       >
-        <Ionicons name={showBack ? 'chevron-back' : 'menu'} size={26} color="#0B3D2E" />
+        <Ionicons name={showBack ? 'chevron-back' : 'menu'} size={26} color="#F15A24" />
       </Pressable>
 
       <BrandLogo width={120} height={44} />

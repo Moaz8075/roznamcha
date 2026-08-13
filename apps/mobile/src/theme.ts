@@ -1,0 +1,18 @@
+export const KHATA = {
+  orange: '#F15A24',
+  orangeDark: '#D84315',
+  collection: '#F6C445',
+  red: '#E53935',
+  redDark: '#C62828',
+  green: '#2E7D32',
+  greenDark: '#1B5E20',
+  bg: '#F4F4F4',
+  card: '#FFFFFF',
+  ink: '#212121',
+  muted: '#757575',
+  line: '#EEEEEE',
+  giveTint: '#FDECEA',
+  gotTint: '#E8F5E9',
+  badgeCustomer: '#E53935',
+  badgeSupplier: '#2E7D32',
+} as const;

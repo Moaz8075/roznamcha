@@ -7,11 +7,27 @@ export function toDateInputValue(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-/** Noon local time avoids timezone day-shift when sending to API. */
-export function dateInputToIso(dateInput: string) {
+/**
+ * Convert YYYY-MM-DD to ISO using the current clock time on that day
+ * (so entries show real create time, not a fixed noon).
+ */
+export function dateInputToIso(dateInput: string, at: Date = new Date()) {
   const [y, m, d] = dateInput.split('-').map(Number);
-  if (!y || !m || !d) return new Date().toISOString();
-  return new Date(y, m - 1, d, 12, 0, 0).toISOString();
+  if (!y || !m || !d) return at.toISOString();
+  return new Date(
+    y,
+    m - 1,
+    d,
+    at.getHours(),
+    at.getMinutes(),
+    at.getSeconds(),
+    at.getMilliseconds(),
+  ).toISOString();
+}
+
+/** Now as ISO — use when the entry is for today / just created. */
+export function nowIso() {
+  return new Date().toISOString();
 }
 
 export function formatDateInputLabel(dateInput: string) {
@@ -30,4 +46,9 @@ export function shiftDateInput(dateInput: string, days: number) {
   const dt = new Date(y, m - 1, d, 12, 0, 0);
   dt.setDate(dt.getDate() + days);
   return toDateInputValue(dt);
+}
+
+/** Local YYYY-MM-DD from an ISO / Date string. */
+export function isoToDateInput(value: string) {
+  return toDateInputValue(new Date(value));
 }

@@ -6,16 +6,16 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#0B3D2E',
-          dark: '#072A20',
-          light: '#145C45',
-          muted: '#E8F2EE',
+          DEFAULT: '#F15A24',
+          dark: '#D84315',
+          light: '#FF7A45',
+          muted: '#FFE8DE',
         },
-        ink: '#12211B',
-        paper: '#FBF9F3',
-        danger: '#B42318',
-        success: '#067647',
-        warn: '#B54708',
+        ink: '#212121',
+        paper: '#F4F4F4',
+        danger: '#E53935',
+        success: '#2E7D32',
+        warn: '#F6C445',
       },
       fontSize: {
         'display': ['28px', { lineHeight: '34px', fontWeight: '700' }],

@@ -8,7 +8,7 @@ export default function AppLayout() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-paper">
-        <ActivityIndicator size="large" color="#0B3D2E" />
+        <ActivityIndicator size="large" color="#F15A24" />
       </View>
     );
   }
@@ -26,13 +26,14 @@ export default function AppLayout() {
         headerShadowVisible: false,
         headerTintColor: '#0B3D2E',
         headerBackTitleVisible: false,
-        contentStyle: { backgroundColor: '#FBF9F3' },
+        contentStyle: { backgroundColor: '#F4F4F4' },
       }}
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="more" options={{ title: 'Profile' }} />
       <Stack.Screen name="customers/[id]" options={{ title: 'Customer' }} />
       <Stack.Screen name="suppliers/[id]" options={{ title: 'Supplier' }} />
+      <Stack.Screen name="entry" options={{ title: 'Entry' }} />
       <Stack.Screen name="products" options={{ title: 'Products' }} />
       <Stack.Screen name="sales/new" options={{ headerShown: true, title: 'New Sale' }} />
       <Stack.Screen name="sales/[id]" options={{ title: 'Invoice' }} />

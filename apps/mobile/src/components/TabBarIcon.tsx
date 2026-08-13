@@ -1,8 +1,9 @@
 import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ACTIVE_BG = '#E8B84A';
-const INACTIVE = '#3D4A44';
+const ACTIVE_BG = '#FFE0D1';
+const INACTIVE = '#757575';
+const ACTIVE = '#F15A24';
 
 export function TabBarIcon({
   name,
@@ -22,7 +23,7 @@ export function TabBarIcon({
         backgroundColor: focused ? ACTIVE_BG : 'transparent',
       }}
     >
-      <Ionicons name={name} size={22} color={INACTIVE} />
+      <Ionicons name={name} size={22} color={focused ? ACTIVE : INACTIVE} />
     </View>
   );
 }

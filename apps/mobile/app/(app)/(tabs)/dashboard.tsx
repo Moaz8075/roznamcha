@@ -6,19 +6,17 @@ import { useAuth } from '../../../src/auth/auth-context';
 import { createApi } from '../../../src/lib/api';
 import { Screen } from '../../../src/components/ui';
 import { AppHeader } from '../../../src/components/AppHeader';
-import { formatMoney } from '../../../src/lib/format';
+import { formatMoney, formatRs } from '../../../src/lib/format';
 
 function formatGreetingDate(d = new Date()) {
   return d.toLocaleDateString(undefined, {
-    weekday: 'long',
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
 }
 
-type StatTone = 'brand' | 'warn' | 'danger' | 'ink' | 'inverse' | 'success';
-
-function StatCard({
+function MiniStat({
   label,
   value,
   tone = 'ink',
@@ -26,37 +24,36 @@ function StatCard({
 }: {
   label: string;
   value?: string;
-  tone?: StatTone;
+  tone?: 'brand' | 'success' | 'danger' | 'ink' | 'inverse';
   loading?: boolean;
 }) {
   const inverse = tone === 'inverse';
   const valueColor =
     tone === 'brand'
       ? 'text-brand'
-      : tone === 'warn'
-        ? 'text-warn'
+      : tone === 'success'
+        ? 'text-success'
         : tone === 'danger'
           ? 'text-danger'
-          : tone === 'success'
-            ? 'text-success'
-            : tone === 'inverse'
-              ? 'text-white'
-              : 'text-ink';
+          : inverse
+            ? 'text-white'
+            : 'text-ink';
 
   return (
     <View
-      className={`min-h-[96px] flex-1 rounded-3xl border px-4 py-4 ${
+      className={`min-w-0 flex-1 rounded-2xl border px-2.5 py-2.5 ${
         inverse ? 'border-brand bg-brand' : 'border-[#E8E4DA] bg-white'
       }`}
     >
       <Text
-        className={`mb-2 text-[11px] font-semibold uppercase tracking-wide ${
+        className={`text-[10px] font-semibold uppercase tracking-wide ${
           inverse ? 'text-white/75' : 'text-ink/45'
         }`}
+        numberOfLines={1}
       >
         {label}
       </Text>
-      <Text className={`text-[22px] font-bold leading-7 ${valueColor}`}>
+      <Text className={`mt-1 text-[15px] font-bold ${valueColor}`} numberOfLines={1}>
         {loading ? '…' : formatMoney(value)}
       </Text>
     </View>
@@ -66,28 +63,28 @@ function StatCard({
 const ACTIONS = [
   {
     href: '/payments?direction=RECEIVE',
-    label: 'Receive Payment',
+    label: 'Receive',
     icon: 'cash' as const,
     color: '#067647',
     set: 'mci' as const,
   },
   {
     href: '/payments?direction=PAY',
-    label: 'Pay Supplier',
+    label: 'Pay',
     icon: 'cash-minus' as const,
     color: '#B42318',
     set: 'mci' as const,
   },
   {
     href: '/sales/new',
-    label: 'New Sale',
+    label: 'Sale',
     icon: 'cart-outline' as const,
     color: '#0B3D2E',
     set: 'ion' as const,
   },
   {
     href: '/purchases/new',
-    label: 'New Purchase',
+    label: 'Purchase',
     icon: 'truck-delivery-outline' as const,
     color: '#0B3D2E',
     set: 'mci' as const,
@@ -100,10 +97,24 @@ const ACTIONS = [
     set: 'ion' as const,
   },
   {
+    href: '/customers',
+    label: 'Party',
+    icon: 'people-outline' as const,
+    color: '#0B3D2E',
+    set: 'ion' as const,
+  },
+  {
     href: '/reports',
-    label: 'View Reports',
+    label: 'Reports',
     icon: 'bar-chart-outline' as const,
     color: '#0B3D2E',
+    set: 'ion' as const,
+  },
+  {
+    href: '/products',
+    label: 'Products',
+    icon: 'cube-outline' as const,
+    color: '#3D4A44',
     set: 'ion' as const,
   },
 ] as const;
@@ -122,87 +133,104 @@ export default function DashboardScreen() {
   return (
     <Screen className="bg-[#FBF9F3]">
       <ScrollView
-        contentContainerStyle={{ paddingTop: 4 }}
-        contentContainerClassName="gap-5 px-5 pb-28"
+        contentContainerStyle={{ paddingTop: 4, paddingBottom: 120, paddingHorizontal: 16 }}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#0B3D2E" />
         }
       >
         <AppHeader />
 
-        <View className="mb-1">
-          <Text className="text-[28px] font-bold leading-9 text-ink">Hello, {firstName}</Text>
-          <Text className="mt-1 text-body text-ink/45">{formatGreetingDate()}</Text>
+        <View className="mb-3 flex-row items-end justify-between">
+          <View className="flex-1 pr-2">
+            <Text className="text-[22px] font-bold text-ink">Hello, {firstName}</Text>
+            <Text className="mt-0.5 text-[13px] text-ink/45">{formatGreetingDate()}</Text>
+          </View>
         </View>
 
         {isError ? (
           <Pressable
             onPress={() => refetch()}
-            className="rounded-3xl border border-danger/20 bg-white px-4 py-5"
+            className="mb-3 rounded-2xl border border-danger/20 bg-white px-4 py-4"
           >
-            <Text className="text-body-lg font-bold text-danger">Could not load summary</Text>
-            <Text className="mt-1 text-body text-ink/50">Tap to retry</Text>
+            <Text className="text-[15px] font-bold text-danger">Could not load summary</Text>
+            <Text className="mt-1 text-[13px] text-ink/50">Tap to retry</Text>
           </Pressable>
         ) : (
-          <View className="gap-3">
-            <View className="flex-row gap-3">
-              <StatCard label="Cash in Hand" value={data?.cashBalance} tone="brand" loading={isLoading} />
-              <StatCard
+          <View className="mb-4 gap-2">
+            <View className="rounded-2xl border border-brand bg-brand px-4 py-3.5">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/75">
+                Cash in hand
+              </Text>
+              <Text className="mt-1 text-[26px] font-extrabold text-white">
+                {isLoading ? '…' : formatRs(data?.cashBalance)}
+              </Text>
+            </View>
+
+            <View className="flex-row gap-2">
+              <MiniStat
                 label="Receivable"
                 value={data?.customerOutstanding}
                 tone="success"
                 loading={isLoading}
               />
-            </View>
-            <View className="flex-row gap-3">
-              <StatCard
+              <MiniStat
                 label="Payable"
                 value={data?.supplierOutstanding}
                 tone="danger"
                 loading={isLoading}
               />
-              <StatCard label="Today's Sales" value={data?.todaySales} loading={isLoading} />
+              <MiniStat label="Sales" value={data?.todaySales} loading={isLoading} />
             </View>
-            <View className="flex-row gap-3">
-              <StatCard label="Expenses" value={data?.todayExpenses} loading={isLoading} />
-              <StatCard
-                label="Today's Profit"
+            <View className="flex-row gap-2">
+              <MiniStat label="Expenses" value={data?.todayExpenses} loading={isLoading} />
+              <MiniStat
+                label="Profit"
                 value={data?.todayProfit}
                 tone="inverse"
+                loading={isLoading}
+              />
+              <MiniStat
+                label="Cash in"
+                value={data?.todayCashIn}
+                tone="success"
                 loading={isLoading}
               />
             </View>
           </View>
         )}
 
-        <Text className="mt-2 text-title text-ink">Quick Actions</Text>
-
-        <View className="flex-row flex-wrap justify-between gap-y-3">
+        <Text className="mb-2 text-[15px] font-bold text-ink">Quick actions</Text>
+        <View className="flex-row flex-wrap justify-between gap-y-2.5">
           {ACTIONS.map((action) => {
             const filled = action.href.includes('RECEIVE') || action.href.includes('PAY');
             return (
               <Link key={action.href} href={action.href as '/sales/new'} asChild>
                 <Pressable
-                  className="h-[112px] w-[48%] items-center justify-center rounded-3xl active:opacity-90"
-                  style={{ backgroundColor: filled ? action.color : '#F0EBE0' }}
+                  className="items-center justify-center rounded-2xl active:opacity-90"
+                  style={{
+                    width: '23.5%',
+                    minHeight: 78,
+                    paddingVertical: 10,
+                    paddingHorizontal: 4,
+                    backgroundColor: filled ? action.color : '#FFFFFF',
+                    borderWidth: filled ? 0 : 1,
+                    borderColor: '#E8E4DA',
+                  }}
                 >
                   {action.set === 'ion' ? (
-                    <Ionicons
-                      name={action.icon}
-                      size={28}
-                      color={filled ? '#fff' : action.color}
-                    />
+                    <Ionicons name={action.icon} size={22} color={filled ? '#fff' : action.color} />
                   ) : (
                     <MaterialCommunityIcons
                       name={action.icon}
-                      size={28}
+                      size={22}
                       color={filled ? '#fff' : action.color}
                     />
                   )}
                   <Text
-                    className={`mt-3 text-center text-[15px] font-semibold ${
+                    className={`mt-1.5 text-center text-[11px] font-semibold ${
                       filled ? 'text-white' : 'text-ink'
                     }`}
+                    numberOfLines={1}
                   >
                     {action.label}
                   </Text>

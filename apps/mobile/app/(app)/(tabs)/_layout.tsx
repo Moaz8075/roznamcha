@@ -21,7 +21,7 @@ export default function TabsLayout() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-paper">
-        <ActivityIndicator size="large" color="#0B3D2E" />
+        <ActivityIndicator size="large" color="#F15A24" />
       </View>
     );
   }
@@ -41,12 +41,12 @@ export default function TabsLayout() {
           height: 88,
           paddingBottom: 18,
           paddingTop: 8,
-          backgroundColor: '#FBF9F3',
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 0,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
           position: 'absolute',
-          elevation: 0,
+          elevation: 8,
           overflow: 'visible',
         },
         tabBarItemStyle: {
@@ -58,8 +58,8 @@ export default function TabsLayout() {
           height: 36,
           marginTop: 0,
         },
-        tabBarActiveTintColor: '#12211B',
-        tabBarInactiveTintColor: '#3D4A44',
+        tabBarActiveTintColor: '#F15A24',
+        tabBarInactiveTintColor: '#757575',
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
@@ -87,8 +87,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="customers/index"
         options={{
-          title: 'Customers',
-          tabBarLabel: 'Customers',
+          title: 'Party',
+          tabBarLabel: 'Party',
           href: '/customers',
           tabBarIcon: ({ focused }) => <TabBarIcon name="people-outline" focused={focused} />,
         }}
@@ -96,10 +96,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="suppliers/index"
         options={{
-          title: 'Suppliers',
-          tabBarLabel: 'Suppliers',
-          href: '/suppliers',
-          tabBarIcon: ({ focused }) => <TabBarIcon name="storefront-outline" focused={focused} />,
+          href: null,
         }}
       />
     </Tabs>

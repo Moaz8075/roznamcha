@@ -10,19 +10,18 @@ import {
   Text,
   View,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../src/auth/auth-context';
 import { createApi } from '../../../src/lib/api';
 import { Screen } from '../../../src/components/ui';
-import { AppHeader } from '../../../src/components/AppHeader';
 import { Field } from '../../../src/components/Field';
 import { BigButton } from '../../../src/components/BigButton';
 import { SuccessModal } from '../../../src/components/SuccessModal';
 import {
-  BalanceHero,
   KhataColumnHeader,
   KhataEntryRow,
   KhataFooterActions,
@@ -31,7 +30,15 @@ import {
   supplierEntryTitle,
   supplierGaveGot,
 } from '../../../src/components/KhataLedger';
-import { formatMoney } from '../../../src/lib/format';
+import { KhataDetailHeader, QuickActions } from '../../../src/components/khata/KhataDetailHeader';
+import { EntryChoiceSheet } from '../../../src/components/khata/EntryChoiceSheet';
+import { formatRs } from '../../../src/lib/format';
+import {
+  dateInputToIso,
+  formatDateInputLabel,
+  isoToDateInput,
+  toDateInputValue,
+} from '../../../src/lib/dates';
 
 export default function SupplierDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,7 +48,10 @@ export default function SupplierDetailScreen() {
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
+  const [filterDate, setFilterDate] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [choice, setChoice] = useState<'purchase' | 'pay' | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [successOpen, setSuccessOpen] = useState(false);
@@ -52,7 +62,6 @@ export default function SupplierDetailScreen() {
     queryFn: () => api.suppliers.get(id),
     enabled: !!id,
   });
-
   const ledger = useQuery({
     queryKey: ['supplier-ledger', id],
     queryFn: () => api.ledger.supplier(id),
@@ -62,19 +71,19 @@ export default function SupplierDetailScreen() {
   const entries = useMemo(() => ledger.data?.items ?? [], [ledger.data?.items]);
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return entries;
     return entries.filter((e) => {
+      if (filterDate && isoToDateInput(e.transactionDate) !== filterDate) return false;
+      if (!needle) return true;
       const title = supplierEntryTitle(e).toLowerCase();
       const desc = (e.description ?? '').toLowerCase();
-      const ref = e.referenceNumber.toLowerCase();
-      return title.includes(needle) || desc.includes(needle) || ref.includes(needle);
+      return title.includes(needle) || desc.includes(needle) || e.referenceNumber.toLowerCase().includes(needle);
     });
-  }, [entries, q]);
+  }, [entries, q, filterDate]);
 
   const balance = Number(supplier.data?.balance ?? 0);
   const tone = !Number.isFinite(balance) || balance === 0 ? 'settled' : balance > 0 ? 'out' : 'in';
   const balanceLabel =
-    tone === 'settled' ? 'Settled' : tone === 'out' ? 'You will give' : 'You will get';
+    tone === 'settled' ? 'Settled' : tone === 'out' ? "You'll Give" : 'You will get';
 
   const openEdit = () => {
     if (!supplier.data) return;
@@ -85,10 +94,7 @@ export default function SupplierDetailScreen() {
 
   const update = useMutation({
     mutationFn: () =>
-      api.suppliers.update(id, {
-        name: name.trim(),
-        phone: phone.trim() || undefined,
-      }),
+      api.suppliers.update(id, { name: name.trim(), phone: phone.trim() || undefined }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['supplier', id] });
       qc.invalidateQueries({ queryKey: ['suppliers'] });
@@ -108,29 +114,17 @@ export default function SupplierDetailScreen() {
     onError: (err: Error) => Alert.alert('Could not delete', err.message),
   });
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete supplier',
-      `Remove “${supplier.data?.name ?? 'this supplier'}”?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => remove.mutate() },
-      ],
-    );
-  };
-
   const printStatement = async () => {
     if (!supplier.data) return;
     const lines = [
-      `Roznamcha — Supplier statement`,
+      `AB & Sons — Supplier statement`,
       supplier.data.name,
-      supplier.data.phone ? `Phone: ${supplier.data.phone}` : '',
-      `Current balance: ${formatMoney(supplier.data.balance)} (${balanceLabel})`,
+      `Current balance: ${formatRs(supplier.data.balance)} (${balanceLabel})`,
       '',
-      ...entries.slice(0, 40).map((e) => {
+      ...filtered.slice(0, 40).map((e) => {
         const { gave, got } = supplierGaveGot(e);
-        const side = gave ? `Gave ${gave}` : `Got ${got}`;
-        return `${formatKhataDateTime(e.transactionDate)} · ${supplierEntryTitle(e)} · ${side} · Bal ${e.balanceAfter}`;
+        const side = gave ? `Paid ${gave}` : `Purchase ${got}`;
+        return `${formatKhataDateTime(e.transactionDate, e.createdAt)} · ${supplierEntryTitle(e)} · ${side}`;
       }),
     ]
       .filter(Boolean)
@@ -142,79 +136,104 @@ export default function SupplierDetailScreen() {
     }
   };
 
+  const pickerValue = new Date(dateInputToIso(filterDate ?? toDateInputValue()));
+
   return (
-    <Screen className="bg-[#FBF9F3]">
+    <Screen className="bg-[#F4F4F4]">
+      {supplier.data ? (
+        <KhataDetailHeader
+          name={supplier.data.name}
+          kind="supplier"
+          phone={supplier.data.phone}
+          balanceAmount={supplier.data.balance}
+          balanceTone={tone}
+          balanceLabel={balanceLabel}
+          onBack={() => (router.canGoBack() ? router.back() : router.replace('/suppliers'))}
+          onSettings={openEdit}
+          onMenu={() =>
+            Alert.alert(supplier.data?.name ?? 'Supplier', undefined, [
+              { text: 'Edit', onPress: openEdit },
+              { text: 'Share statement', onPress: printStatement },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () =>
+                  Alert.alert('Delete supplier', `Remove “${supplier.data?.name}”?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => remove.mutate() },
+                  ]),
+              },
+              { text: 'Cancel', style: 'cancel' },
+            ])
+          }
+        />
+      ) : null}
+
       <ScrollView
-        contentContainerStyle={{
-          paddingBottom: Math.max(insets.bottom, 16) + 88,
-          paddingHorizontal: 16,
-          gap: 12,
-        }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 88 }}
         keyboardShouldPersistTaps="handled"
       >
-        <AppHeader showBack fallbackHref="/suppliers" />
-
         {!supplier.data ? (
           <Text className="py-10 text-center text-body-lg text-ink/45">
             {supplier.isLoading ? 'Loading…' : 'Supplier not found'}
           </Text>
         ) : (
           <>
-            <View className="rounded-3xl border border-[#E8E4DA] bg-white px-4 py-4">
-              <Text className="text-[22px] font-bold leading-7 text-ink">{supplier.data.name}</Text>
-              <View className="mt-2 flex-row items-center gap-2">
-                <Ionicons name="call-outline" size={15} color="#6B7C74" />
-                <Text className="text-body text-ink/60">
-                  {supplier.data.phone?.trim() ? supplier.data.phone : 'No phone'}
+            <QuickActions
+              actions={[
+                { icon: 'document-text-outline', label: 'Report', onPress: printStatement },
+                {
+                  icon: 'calendar-outline',
+                  label: filterDate ? 'Date ✓' : 'Set Date',
+                  onPress: () => setDatePickerOpen(true),
+                },
+              ]}
+            />
+            {filterDate ? (
+              <View className="mb-2 flex-row items-center justify-between px-4">
+                <Text className="text-[12px] font-semibold text-ink/55">
+                  Showing {formatDateInputLabel(filterDate)}
                 </Text>
-              </View>
-              <View className="mt-3 flex-row flex-wrap gap-3">
-                <Pressable onPress={openEdit} hitSlop={8}>
-                  <Text className="text-body font-semibold text-brand">Edit</Text>
-                </Pressable>
-                <Pressable onPress={confirmDelete} hitSlop={8}>
-                  <Text className="text-body font-semibold text-danger">Delete</Text>
-                </Pressable>
-                <Pressable onPress={printStatement} hitSlop={8}>
-                  <Text className="text-body font-semibold text-brand">Share statement</Text>
+                <Pressable
+                  onPress={() => setFilterDate(null)}
+                  className="flex-row items-center rounded-full bg-white px-3 py-1.5"
+                >
+                  <Ionicons name="close-circle" size={14} color="#757575" />
+                  <Text className="ml-1 text-[12px] font-semibold text-ink/60">Clear date</Text>
                 </Pressable>
               </View>
+            ) : null}
+            <View className="px-4">
+              <KhataSearch value={q} onChange={setQ} />
             </View>
-
-            <BalanceHero amount={supplier.data.balance} tone={tone} label={balanceLabel} />
-
-            <KhataSearch value={q} onChange={setQ} placeholder="Search entries…" />
-
-            <View className="overflow-hidden rounded-2xl border border-[#E8E4DA]">
-              <KhataColumnHeader />
+            <View className="overflow-hidden bg-white">
+              <KhataColumnHeader variant="supplier" />
               {filtered.map((entry) => {
                 const { gave, got } = supplierGaveGot(entry);
                 const lines = entry.detailLines ?? [];
                 const title = supplierEntryTitle(entry);
                 const notes = entry.description?.trim() || null;
-                const subtitle =
-                  lines.length && notes
-                    ? notes
-                    : notes && notes !== title
-                      ? notes
-                      : entry.referenceNumber;
-
                 return (
                   <KhataEntryRow
                     key={entry.id}
+                    variant="supplier"
                     title={title}
-                    subtitle={subtitle}
+                    subtitle={notes && notes !== title ? notes : entry.referenceNumber}
                     itemCount={entry.itemCount ?? lines.length}
                     balanceAfter={entry.balanceAfter}
                     gave={gave}
                     got={got}
-                    dateLabel={formatKhataDateTime(entry.transactionDate)}
+                    dateLabel={formatKhataDateTime(entry.transactionDate, entry.createdAt)}
                   />
                 );
               })}
               {!filtered.length ? (
                 <Text className="py-8 text-center text-body text-ink/45">
-                  {entries.length ? 'No matching entries' : 'No transactions yet'}
+                  {entries.length
+                    ? filterDate
+                      ? 'No entries on this date'
+                      : 'No matching entries'
+                    : 'No transactions yet'}
                 </Text>
               ) : null}
             </View>
@@ -224,60 +243,91 @@ export default function SupplierDetailScreen() {
 
       {supplier.data ? (
         <View
-          className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-[#FBF9F3]"
+          className="absolute bottom-0 left-0 right-0 bg-white"
           style={{ paddingBottom: Math.max(insets.bottom, 10) }}
         >
           <KhataFooterActions
-            gaveLabel="YOU GAVE"
-            gotLabel="YOU GOT"
-            onGave={() => router.push(`/payments?direction=PAY&supplierId=${id}`)}
-            onGot={() => router.push(`/purchases/new?supplierId=${id}`)}
+            gaveLabel="PURCHASE Rs"
+            gotLabel="PAYMENT Rs"
+            gaveColor="#2E7D32"
+            gotColor="#E53935"
+            onGave={() => setChoice('purchase')}
+            onGot={() => setChoice('pay')}
           />
         </View>
       ) : null}
 
-      <Modal
-        visible={editOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setEditOpen(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 justify-end bg-black/40"
-        >
+      <EntryChoiceSheet
+        visible={choice !== null}
+        title={choice === 'purchase' ? 'Purchase' : 'Payment'}
+        onClose={() => setChoice(null)}
+        onManual={() => {
+          const kind = choice === 'purchase' ? 'purchase' : 'pay';
+          setChoice(null);
+          router.push(
+            `/entry?kind=${kind}&supplierId=${id}&name=${encodeURIComponent(supplier.data?.name ?? '')}`,
+          );
+        }}
+      />
+
+      {datePickerOpen && Platform.OS === 'android' ? (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          onChange={(_, selected) => {
+            setDatePickerOpen(false);
+            if (selected) setFilterDate(toDateInputValue(selected));
+          }}
+        />
+      ) : null}
+      {Platform.OS === 'ios' && datePickerOpen ? (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setDatePickerOpen(false)}>
+          <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setDatePickerOpen(false)}>
+            <View className="rounded-t-3xl bg-white px-5 pb-8 pt-4">
+              <Text className="mb-2 text-[16px] font-bold text-ink">Filter by date</Text>
+              <DateTimePicker
+                value={pickerValue}
+                mode="date"
+                display="spinner"
+                onChange={(_, selected) => {
+                  if (selected) setFilterDate(toDateInputValue(selected));
+                }}
+              />
+              <BigButton label="Apply" onPress={() => setDatePickerOpen(false)} />
+              <BigButton
+                label="Clear filter"
+                variant="secondary"
+                className="mt-2"
+                onPress={() => {
+                  setFilterDate(null);
+                  setDatePickerOpen(false);
+                }}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+      ) : null}
+
+      <Modal visible={editOpen} animationType="slide" transparent onRequestClose={() => setEditOpen(false)}>
+        <KeyboardAvoidingView behavior="padding" className="flex-1 justify-end bg-black/40">
           <Pressable className="flex-1" onPress={() => setEditOpen(false)} />
-          <View className="rounded-t-3xl bg-[#FBF9F3] px-5 pb-8 pt-5">
-            <Text className="mb-4 text-title text-ink">Edit supplier</Text>
+          <View className="rounded-t-3xl bg-white px-5 pb-8 pt-5">
+            <Text className="mb-4 text-[20px] font-bold text-ink">Edit supplier</Text>
             <Field label="Name" value={name} onChangeText={setName} autoFocus />
-            <Field
-              label="Phone"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
+            <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
             <BigButton
               label="Save changes"
               loading={update.isPending}
               disabled={!name.trim()}
               onPress={() => update.mutate()}
             />
-            <BigButton
-              label="Cancel"
-              variant="secondary"
-              className="mt-3"
-              onPress={() => setEditOpen(false)}
-            />
+            <BigButton label="Cancel" variant="secondary" className="mt-3" onPress={() => setEditOpen(false)} />
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      <SuccessModal
-        visible={successOpen}
-        title="Saved"
-        message={successMsg}
-        onDone={() => setSuccessOpen(false)}
-      />
+      <SuccessModal visible={successOpen} title="Saved" message={successMsg} onDone={() => setSuccessOpen(false)} />
     </Screen>
   );
 }

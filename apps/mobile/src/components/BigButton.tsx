@@ -42,7 +42,7 @@ export function BigButton({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'secondary' ? '#0B3D2E' : '#fff'} />
+        <ActivityIndicator color={variant === 'secondary' ? '#F15A24' : '#fff'} />
       ) : (
         <Text className={`text-body-lg font-bold ${textStyles[variant]}`}>{label}</Text>
       )}

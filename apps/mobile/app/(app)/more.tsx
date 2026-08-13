@@ -17,7 +17,7 @@ export default function MoreScreen() {
   const { logout, user } = useAuth();
 
   return (
-    <Screen className="bg-[#FBF9F3]">
+    <Screen className="bg-[#F4F4F4]">
       <ScrollView contentContainerClassName="gap-3 px-5 pb-10 pt-2">
         <AppHeader showBack fallbackHref="/dashboard" />
         <View className="mb-2">
