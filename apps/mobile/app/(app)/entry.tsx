@@ -194,15 +194,6 @@ export default function EntryScreen() {
           </Pressable>
         ) : null}
         <Pressable
-          onPress={() => Alert.alert('Voice note', 'Voice notes are coming next. Use Manual for now.')}
-          className="mb-4 flex-row items-center justify-between rounded-xl border border-black/10 px-4 py-3.5"
-        >
-          <Text className="text-[15px] font-semibold" style={{ color: headerColor }}>
-            Attach Voice Note
-          </Text>
-          <Ionicons name="mic" size={18} color={headerColor} />
-        </Pressable>
-        <Pressable
           onPress={() => mutation.mutate()}
           disabled={mutation.isPending || amountNum <= 0}
           className="min-h-[52px] items-center justify-center rounded-xl active:opacity-90"

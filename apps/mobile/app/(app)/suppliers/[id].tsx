@@ -31,7 +31,6 @@ import {
   supplierGaveGot,
 } from '../../../src/components/KhataLedger';
 import { KhataDetailHeader, QuickActions } from '../../../src/components/khata/KhataDetailHeader';
-import { EntryChoiceSheet } from '../../../src/components/khata/EntryChoiceSheet';
 import { formatRs } from '../../../src/lib/format';
 import {
   dateInputToIso,
@@ -51,7 +50,6 @@ export default function SupplierDetailScreen() {
   const [filterDate, setFilterDate] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [choice, setChoice] = useState<'purchase' | 'pay' | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [successOpen, setSuccessOpen] = useState(false);
@@ -251,24 +249,19 @@ export default function SupplierDetailScreen() {
             gotLabel="PAYMENT Rs"
             gaveColor="#2E7D32"
             gotColor="#E53935"
-            onGave={() => setChoice('purchase')}
-            onGot={() => setChoice('pay')}
+            onGave={() =>
+              router.push(
+                `/entry?kind=purchase&supplierId=${id}&name=${encodeURIComponent(supplier.data?.name ?? '')}`,
+              )
+            }
+            onGot={() =>
+              router.push(
+                `/entry?kind=pay&supplierId=${id}&name=${encodeURIComponent(supplier.data?.name ?? '')}`,
+              )
+            }
           />
         </View>
       ) : null}
-
-      <EntryChoiceSheet
-        visible={choice !== null}
-        title={choice === 'purchase' ? 'Purchase' : 'Payment'}
-        onClose={() => setChoice(null)}
-        onManual={() => {
-          const kind = choice === 'purchase' ? 'purchase' : 'pay';
-          setChoice(null);
-          router.push(
-            `/entry?kind=${kind}&supplierId=${id}&name=${encodeURIComponent(supplier.data?.name ?? '')}`,
-          );
-        }}
-      />
 
       {datePickerOpen && Platform.OS === 'android' ? (
         <DateTimePicker
