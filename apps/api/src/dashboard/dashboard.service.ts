@@ -3,6 +3,7 @@ import { CashDirection, LedgerPartyType } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { FinancialTransactionService } from '../transactions/financial-transaction.service';
 import { d, moneyStr } from '../common/money';
+import { businessDayBounds } from '../common/dates';
 
 @Injectable()
 export class DashboardService {
@@ -14,10 +15,7 @@ export class DashboardService {
   async summary() {
     const cashBalance = await this.transactions.getCashBalance();
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const { start, end } = businessDayBounds();
 
     const todayCash = await this.prisma.cashTransaction.groupBy({
       by: ['direction'],

@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FinancialTransactionService } from '../transactions/financial-transaction.service';
 import { d, moneyStr } from '../common/money';
 import { paginate } from '../common/response';
+import { businessDayBounds } from '../common/dates';
 
 @Injectable()
 export class CashService {
@@ -22,17 +23,7 @@ export class CashService {
    * Opening + Cash Received − Cash Paid = Closing
    */
   async getRoznamcha(date?: string) {
-    let day: Date;
-    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const [y, m, dayNum] = date.split('-').map(Number);
-      day = new Date(y, m - 1, dayNum);
-    } else {
-      day = new Date();
-    }
-    const start = new Date(day);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(day);
-    end.setHours(23, 59, 59, 999);
+    const { date: day, start, end } = businessDayBounds(date);
 
     const before = await this.prisma.cashTransaction.findFirst({
       where: { transactionDate: { lt: start } },
@@ -84,7 +75,7 @@ export class CashService {
     }));
 
     return {
-      date: start.toISOString().slice(0, 10),
+      date: day,
       openingCash: moneyStr(openingCash),
       cashReceived: moneyStr(cashReceived),
       cashPaid: moneyStr(cashPaid),
