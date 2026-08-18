@@ -32,15 +32,43 @@ export class DashboardService {
       todayCash.find((r) => r.direction === CashDirection.OUT)?._sum.amount?.toString() ?? 0,
     );
 
-    const todaySalesAgg = await this.prisma.sale.aggregate({
-      where: { deletedAt: null, transactionDate: { gte: start, lte: end } },
-      _sum: { total: true, profit: true },
-    });
+    const [todaySalesAgg, todayPurchasesAgg, todayExpensesAgg, allSalesAgg, allPurchasesAgg, allExpensesAgg] =
+      await Promise.all([
+        this.prisma.sale.aggregate({
+          where: { deletedAt: null, transactionDate: { gte: start, lte: end } },
+          _sum: { total: true },
+        }),
+        this.prisma.purchase.aggregate({
+          where: { deletedAt: null, transactionDate: { gte: start, lte: end } },
+          _sum: { total: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { deletedAt: null, transactionDate: { gte: start, lte: end } },
+          _sum: { amount: true },
+        }),
+        this.prisma.sale.aggregate({
+          where: { deletedAt: null },
+          _sum: { total: true },
+        }),
+        this.prisma.purchase.aggregate({
+          where: { deletedAt: null },
+          _sum: { total: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { deletedAt: null },
+          _sum: { amount: true },
+        }),
+      ]);
 
-    const todayExpensesAgg = await this.prisma.expense.aggregate({
-      where: { deletedAt: null, transactionDate: { gte: start, lte: end } },
-      _sum: { amount: true },
-    });
+    const todaySales = d(todaySalesAgg._sum.total?.toString() ?? 0);
+    const todayPurchases = d(todayPurchasesAgg._sum.total?.toString() ?? 0);
+    const todayExpenses = d(todayExpensesAgg._sum.amount?.toString() ?? 0);
+    const todayProfit = todaySales.minus(todayPurchases).minus(todayExpenses);
+
+    const totalSales = d(allSalesAgg._sum.total?.toString() ?? 0);
+    const totalPurchases = d(allPurchasesAgg._sum.total?.toString() ?? 0);
+    const totalExpenses = d(allExpensesAgg._sum.amount?.toString() ?? 0);
+    const netProfit = totalSales.minus(totalPurchases).minus(totalExpenses);
 
     const customers = await this.prisma.customer.findMany({
       where: { deletedAt: null },
@@ -68,9 +96,14 @@ export class DashboardService {
       todayCashOut: moneyStr(todayCashOut),
       customerOutstanding: moneyStr(customerOutstanding),
       supplierOutstanding: moneyStr(supplierOutstanding),
-      todaySales: moneyStr(todaySalesAgg._sum.total?.toString() ?? 0),
-      todayExpenses: moneyStr(todayExpensesAgg._sum.amount?.toString() ?? 0),
-      todayProfit: moneyStr(todaySalesAgg._sum.profit?.toString() ?? 0),
+      todaySales: moneyStr(todaySales),
+      todayPurchases: moneyStr(todayPurchases),
+      todayExpenses: moneyStr(todayExpenses),
+      todayProfit: moneyStr(todayProfit),
+      totalSales: moneyStr(totalSales),
+      totalPurchases: moneyStr(totalPurchases),
+      totalExpenses: moneyStr(totalExpenses),
+      netProfit: moneyStr(netProfit),
     };
   }
 }

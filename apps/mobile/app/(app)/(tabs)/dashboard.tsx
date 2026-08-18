@@ -104,13 +104,6 @@ const ACTIONS = [
     set: 'ion' as const,
   },
   {
-    href: '/reports',
-    label: 'Reports',
-    icon: 'bar-chart-outline' as const,
-    color: '#0B3D2E',
-    set: 'ion' as const,
-  },
-  {
     href: '/products',
     label: 'Products',
     icon: 'cube-outline' as const,
@@ -179,65 +172,66 @@ export default function DashboardScreen() {
                 tone="danger"
                 loading={isLoading}
               />
-              <MiniStat label="Sales" value={data?.todaySales} loading={isLoading} />
             </View>
-            <View className="flex-row gap-2">
-              <MiniStat label="Expenses" value={data?.todayExpenses} loading={isLoading} />
-              <MiniStat
-                label="Profit"
-                value={data?.todayProfit}
-                tone="inverse"
-                loading={isLoading}
-              />
-              <MiniStat
-                label="Cash in"
-                value={data?.todayCashIn}
-                tone="success"
-                loading={isLoading}
-              />
+
+            <View className="rounded-2xl border border-[#E8E4DA] bg-white px-3.5 py-3">
+              <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink/45">
+                Profit = sales − purchases − expenses
+              </Text>
+              <View className="flex-row gap-2">
+                <MiniStat label="Sales" value={data?.totalSales} tone="success" loading={isLoading} />
+                <MiniStat label="Purchases" value={data?.totalPurchases} tone="danger" loading={isLoading} />
+                <MiniStat label="Expenses" value={data?.totalExpenses} tone="danger" loading={isLoading} />
+              </View>
+              <View className="mt-2 flex-row items-center justify-between rounded-xl bg-brand px-3 py-2.5">
+                <Text className="text-[12px] font-semibold text-white/80">Overall profit</Text>
+                <Text className="text-[18px] font-extrabold text-white">
+                  {isLoading ? '…' : formatRs(data?.netProfit)}
+                </Text>
+              </View>
             </View>
           </View>
         )}
 
         <Text className="mb-2 text-[15px] font-bold text-ink">Quick actions</Text>
-        <View className="flex-row flex-wrap justify-between gap-y-2.5">
-          {ACTIONS.map((action) => {
-            const filled = action.href.includes('RECEIVE') || action.href.includes('PAY');
-            return (
-              <Link key={action.href} href={action.href as '/sales/new'} asChild>
-                <Pressable
-                  className="items-center justify-center rounded-2xl active:opacity-90"
-                  style={{
-                    width: '23.5%',
-                    minHeight: 78,
-                    paddingVertical: 10,
-                    paddingHorizontal: 4,
-                    backgroundColor: filled ? action.color : '#FFFFFF',
-                    borderWidth: filled ? 0 : 1,
-                    borderColor: '#E8E4DA',
-                  }}
-                >
-                  {action.set === 'ion' ? (
-                    <Ionicons name={action.icon} size={22} color={filled ? '#fff' : action.color} />
-                  ) : (
-                    <MaterialCommunityIcons
-                      name={action.icon}
-                      size={22}
-                      color={filled ? '#fff' : action.color}
-                    />
-                  )}
-                  <Text
-                    className={`mt-1.5 text-center text-[11px] font-semibold ${
-                      filled ? 'text-white' : 'text-ink'
-                    }`}
-                    numberOfLines={1}
-                  >
-                    {action.label}
-                  </Text>
-                </Pressable>
-              </Link>
-            );
-          })}
+        <View className="gap-2.5">
+          {[ACTIONS.slice(0, 4), ACTIONS.slice(4)].map((row, rowIndex) => (
+            <View key={rowIndex} className="flex-row gap-2">
+              {row.map((action) => {
+                const filled = action.href.includes('RECEIVE') || action.href.includes('PAY');
+                return (
+                  <Link key={action.href} href={action.href as '/sales/new'} asChild>
+                    <Pressable
+                      className="min-h-[78px] flex-1 items-center justify-center rounded-2xl px-1 py-2.5 active:opacity-90"
+                      style={{
+                        backgroundColor: filled ? action.color : '#FFFFFF',
+                        borderWidth: filled ? 0 : 1,
+                        borderColor: '#E8E4DA',
+                      }}
+                    >
+                      {action.set === 'ion' ? (
+                        <Ionicons name={action.icon} size={22} color={filled ? '#fff' : action.color} />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={action.icon}
+                          size={22}
+                          color={filled ? '#fff' : action.color}
+                        />
+                      )}
+                      <Text
+                        className={`mt-1.5 text-center text-[11px] font-semibold ${
+                          filled ? 'text-white' : 'text-ink'
+                        }`}
+                        numberOfLines={1}
+                      >
+                        {action.label}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                );
+              })}
+            </View>
+          ))}
         </View>
       </ScrollView>
     </Screen>

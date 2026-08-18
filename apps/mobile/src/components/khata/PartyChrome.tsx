@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KHATA } from '../../theme';
 import { formatRs, initials, relativeActivity } from '../../lib/format';
 
-export type PartyTab = 'customers' | 'suppliers' | 'all';
+export type PartyTab = 'customers' | 'suppliers';
 
 export function PartyHeader({
   tab,
@@ -20,7 +20,6 @@ export function PartyHeader({
   const tabs: { id: PartyTab; label: string }[] = [
     { id: 'customers', label: 'Customers' },
     { id: 'suppliers', label: 'Suppliers' },
-    { id: 'all', label: 'All' },
   ];
 
   return (
@@ -69,7 +68,10 @@ export function PartySummaryCard({
   leftLabel,
   rightValue,
   rightLabel,
+  midValue,
+  midLabel,
   leftGreen = true,
+  midGreen = true,
   rightGreen = false,
   onToggle,
   hidden,
@@ -78,11 +80,33 @@ export function PartySummaryCard({
   leftLabel: string;
   rightValue: string;
   rightLabel: string;
+  midValue?: string;
+  midLabel?: string;
   leftGreen?: boolean;
+  midGreen?: boolean;
   rightGreen?: boolean;
   onToggle?: () => void;
   hidden?: boolean;
 }) {
+  const cell = (
+    value: string,
+    label: string,
+    green: boolean,
+  ) => (
+    <View className="min-w-0 flex-1">
+      <Text
+        className="text-[18px] font-extrabold"
+        style={{ color: green ? KHATA.green : KHATA.red }}
+        numberOfLines={1}
+      >
+        {hidden ? '••••' : formatRs(value)}
+      </Text>
+      <Text className="mt-0.5 text-[11px] text-ink/50" numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+
   return (
     <View
       className="mx-4 -mt-3 rounded-2xl bg-white px-4 py-3"
@@ -100,26 +124,17 @@ export function PartySummaryCard({
         </Text>
       </Pressable>
       <View className="flex-row items-center">
-        <View className="flex-1">
-          <Text
-            className="text-[22px] font-extrabold"
-            style={{ color: leftGreen ? KHATA.green : KHATA.red }}
-          >
-            {hidden ? '••••••' : formatRs(leftValue)}
-          </Text>
-          <Text className="mt-0.5 text-[12px] text-ink/50">{leftLabel}</Text>
-        </View>
-        <View className="mx-3 h-10 w-px bg-black/10" />
-        <View className="flex-1">
-          <Text
-            className="text-[22px] font-extrabold"
-            style={{ color: rightGreen ? KHATA.green : KHATA.red }}
-          >
-            {hidden ? '••••••' : formatRs(rightValue)}
-          </Text>
-          <Text className="mt-0.5 text-[12px] text-ink/50">{rightLabel}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={KHATA.red} />
+        {cell(leftValue, leftLabel, leftGreen)}
+        <View className="mx-2 h-10 w-px bg-black/10" />
+        {midValue != null && midLabel
+          ? (
+              <>
+                {cell(midValue, midLabel, midGreen)}
+                <View className="mx-2 h-10 w-px bg-black/10" />
+              </>
+            )
+          : null}
+        {cell(rightValue, rightLabel, rightGreen)}
       </View>
     </View>
   );
@@ -171,7 +186,15 @@ export function PartyRow({
   const youGet = kind === 'customer' ? n > 0 : n < 0;
   const youGive = kind === 'customer' ? n < 0 : n > 0;
   const color = youGet ? KHATA.red : youGive ? KHATA.green : KHATA.muted;
-  const label = youGet ? "You'll Get" : youGive ? "You'll Give" : 'Settled';
+  const label = youGet
+    ? kind === 'supplier'
+      ? "I'll Get"
+      : "You'll Get"
+    : youGive
+      ? kind === 'customer'
+        ? "I'll Pay"
+        : "You'll Give"
+      : 'Settled';
   const avatarBg = kind === 'supplier' ? '#E8F5E9' : '#FDECEA';
   const avatarColor = kind === 'supplier' ? KHATA.green : KHATA.red;
 

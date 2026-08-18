@@ -82,7 +82,7 @@ export default function CustomerDetailScreen() {
   const balance = Number(customer.data?.balance ?? 0);
   const tone = !Number.isFinite(balance) || balance === 0 ? 'settled' : balance > 0 ? 'in' : 'out';
   const balanceLabel =
-    tone === 'settled' ? 'Settled' : tone === 'in' ? 'You will get' : 'You will give';
+    tone === 'settled' ? 'Settled' : tone === 'in' ? "You'll Get" : "I'll Pay";
 
   const openEdit = () => {
     if (!customer.data) return;

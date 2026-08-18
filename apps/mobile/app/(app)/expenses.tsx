@@ -59,16 +59,26 @@ export default function ExpensesScreen() {
     queryFn: () => api.expenses.list(),
   });
 
+  const totalsByTab = useMemo(() => {
+    const all = data?.items ?? [];
+    const sum = (type?: Tab) =>
+      all
+        .filter((e) => type === 'ALL' || !type || e.expenseType === type)
+        .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    return {
+      ALL: sum('ALL'),
+      BUSINESS: sum('BUSINESS'),
+      PERSONAL: sum('PERSONAL'),
+    };
+  }, [data?.items]);
+
   const items = useMemo(() => {
     const all = data?.items ?? [];
     if (tab === 'ALL') return all;
     return all.filter((e) => e.expenseType === tab);
   }, [data?.items, tab]);
 
-  const totalAmount = useMemo(
-    () => items.reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
-    [items],
-  );
+  const totalAmount = totalsByTab[tab];
 
   const categoryOptions = useMemo(() => {
     const source =
@@ -123,9 +133,18 @@ export default function ExpensesScreen() {
               <View>
                 <Text className="text-[26px] font-bold text-ink">Expenses</Text>
                 <Text className="mt-0.5 text-[13px] text-ink/45">
-                  {items.length} {items.length === 1 ? 'entry' : 'entries'} · {formatRs(totalAmount)}
+                  {items.length} {items.length === 1 ? 'entry' : 'entries'}
                 </Text>
               </View>
+            </View>
+
+            <View className="rounded-2xl border border-danger/20 bg-[#FDECEA] px-4 py-3.5">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-danger">
+                {tab === 'ALL' ? 'Total expenses' : tab === 'BUSINESS' ? 'Business total' : 'Personal total'}
+              </Text>
+              <Text className="mt-1 text-[28px] font-extrabold text-danger">
+                {isLoading ? '…' : formatRs(totalAmount)}
+              </Text>
             </View>
 
             <View className="flex-row rounded-full bg-[#ECEAE3] p-1">
@@ -135,12 +154,15 @@ export default function ExpensesScreen() {
                   <Pressable
                     key={t.id}
                     onPress={() => setTab(t.id)}
-                    className={`min-h-[40px] flex-1 items-center justify-center rounded-full ${
+                    className={`min-h-[48px] flex-1 items-center justify-center rounded-full px-1 ${
                       active ? 'bg-brand' : ''
                     }`}
                   >
-                    <Text className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-ink/65'}`}>
+                    <Text className={`text-[12px] font-semibold ${active ? 'text-white' : 'text-ink/65'}`}>
                       {t.label}
+                    </Text>
+                    <Text className={`text-[11px] font-bold ${active ? 'text-white' : 'text-danger'}`}>
+                      {formatMoney(totalsByTab[t.id])}
                     </Text>
                   </Pressable>
                 );

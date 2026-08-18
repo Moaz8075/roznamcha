@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   FlatList,
+  Modal,
   Platform,
   Pressable,
   Text,
@@ -11,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../src/auth/auth-context';
 import { createApi } from '../../../src/lib/api';
 import { Screen } from '../../../src/components/ui';
@@ -23,6 +25,12 @@ import {
   shiftDateInput,
   toDateInputValue,
 } from '../../../src/lib/dates';
+
+const ENTRY_ACTIONS = [
+  { href: '/payments?direction=RECEIVE', label: 'Receive', icon: 'arrow-down-circle-outline' as const },
+  { href: '/payments?direction=PAY', label: 'Pay', icon: 'arrow-up-circle-outline' as const },
+  { href: '/expenses', label: 'Expense', icon: 'receipt-outline' as const },
+] as const;
 
 function CompactStat({
   label,
@@ -54,28 +62,21 @@ function CompactStat({
   );
 }
 
-type CashFilter = 'all' | 'expenses';
-
 export default function RoznamchaScreen() {
   const { token } = useAuth();
   const api = createApi(() => token);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [date, setDate] = useState(toDateInputValue());
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [cashFilter, setCashFilter] = useState<CashFilter>('all');
+  const [addOpen, setAddOpen] = useState(false);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['roznamcha', date],
     queryFn: () => api.cash.roznamcha(date),
   });
 
-  const items = useMemo(() => {
-    const all = data?.items ?? [];
-    if (cashFilter !== 'expenses') return all;
-    return all.filter(
-      (i) => i.type === 'EXPENSE_BUSINESS' || i.type === 'EXPENSE_PERSONAL' || !!i.expenseId,
-    );
-  }, [data?.items, cashFilter]);
+  const items = data?.items ?? [];
 
   const isToday = date === toDateInputValue();
   const dateObj = new Date(dateInputToIso(date));
@@ -94,7 +95,7 @@ export default function RoznamchaScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#0B3D2E" />
         }
         ListHeaderComponent={
-          <View className="mb-2 gap-2">
+          <View className="mb-2 gap-1.5">
             <AppHeader />
 
             <View className="flex-row items-end justify-between">
@@ -105,14 +106,6 @@ export default function RoznamchaScreen() {
                 </Text>
               </View>
               <View className="flex-row items-center gap-1">
-                <Pressable
-                  onPress={() => router.push('/expenses')}
-                  className="mr-1 h-9 flex-row items-center rounded-full bg-white px-3"
-                  hitSlop={6}
-                >
-                  <Ionicons name="receipt-outline" size={15} color="#0B3D2E" />
-                  <Text className="ml-1 text-[12px] font-semibold text-ink">Expenses</Text>
-                </Pressable>
                 <Pressable
                   onPress={() => setDate(shiftDateInput(date, -1))}
                   className="h-9 w-9 items-center justify-center rounded-full bg-white"
@@ -183,41 +176,11 @@ export default function RoznamchaScreen() {
                 tone="closing"
               />
             </View>
-
-            <View className="flex-row gap-2">
-              {(
-                [
-                  { id: 'all' as const, label: 'All cash' },
-                  { id: 'expenses' as const, label: 'Expenses only' },
-                ] as const
-              ).map((f) => {
-                const active = cashFilter === f.id;
-                return (
-                  <Pressable
-                    key={f.id}
-                    onPress={() => setCashFilter(f.id)}
-                    className={`rounded-full px-3 py-1.5 ${active ? 'bg-brand' : 'bg-white'}`}
-                  >
-                    <Text className={`text-[12px] font-semibold ${active ? 'text-white' : 'text-ink/60'}`}>
-                      {f.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <Text className="mt-1 text-[13px] font-bold text-ink/55">
-              {cashFilter === 'expenses' ? 'Expenses' : 'Cash movements'}
-            </Text>
           </View>
         }
         ListEmptyComponent={
           <Text className="py-10 text-center text-body text-ink/45">
-            {isLoading
-              ? 'Loading…'
-              : cashFilter === 'expenses'
-                ? 'No expenses for this date'
-                : 'No cash movements for this date'}
+            {isLoading ? 'Loading…' : 'No cash movements for this date'}
           </Text>
         }
         ListFooterComponent={
@@ -250,6 +213,50 @@ export default function RoznamchaScreen() {
           );
         }}
       />
+
+      <Pressable
+        onPress={() => setAddOpen(true)}
+        className="absolute right-4 flex-row items-center rounded-full bg-brand px-4 py-3 active:opacity-90"
+        style={{
+          bottom: Math.max(insets.bottom, 12) + 84,
+          elevation: 6,
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 3 },
+        }}
+      >
+        <Ionicons name="add" size={20} color="#fff" />
+        <Text className="ml-1.5 text-[13px] font-extrabold tracking-wide text-white">ADD ENTRY</Text>
+      </Pressable>
+
+      <Modal visible={addOpen} animationType="slide" transparent onRequestClose={() => setAddOpen(false)}>
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setAddOpen(false)}>
+          <Pressable
+            className="rounded-t-3xl bg-white px-5 pb-8 pt-4"
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="mb-4 h-1 w-10 self-center rounded-full bg-black/15" />
+            <Text className="mb-3 text-[18px] font-bold text-ink">Add Roznamcha entry</Text>
+            {ENTRY_ACTIONS.map((action) => (
+              <Pressable
+                key={action.href}
+                onPress={() => {
+                  setAddOpen(false);
+                  router.push(action.href as '/sales/new');
+                }}
+                className="flex-row items-center border-b border-black/5 py-3.5 active:opacity-70"
+              >
+                <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#F4F4F4]">
+                  <Ionicons name={action.icon} size={20} color="#0B3D2E" />
+                </View>
+                <Text className="text-[16px] font-semibold text-ink">{action.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color="#9E9E9E" style={{ marginLeft: 'auto' }} />
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }

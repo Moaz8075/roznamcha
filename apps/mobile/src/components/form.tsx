@@ -35,6 +35,7 @@ export function SelectSheet({
   onSelect,
   searchable = false,
   searchPlaceholder = 'Search…',
+  compact = false,
 }: {
   label?: string;
   placeholder: string;
@@ -43,6 +44,7 @@ export function SelectSheet({
   onSelect: (id: string) => void;
   searchable?: boolean;
   searchPlaceholder?: string;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -58,16 +60,16 @@ export function SelectSheet({
   }, [options, q]);
 
   return (
-    <View className="mb-4">
+    <View className={compact ? 'mb-2' : 'mb-4'}>
       {label ? <FormLabel>{label}</FormLabel> : null}
       <Pressable
         onPress={() => {
           setQ('');
           setOpen(true);
         }}
-        className="min-h-[56px] flex-row items-center justify-between rounded-2xl border border-ink/15 bg-white px-4"
+        className={`${compact ? 'min-h-[44px]' : 'min-h-[56px]'} flex-row items-center justify-between rounded-2xl border border-ink/15 bg-white px-4`}
       >
-        <Text className={`flex-1 text-body-lg ${valueLabel ? 'text-ink' : 'text-ink/40'}`}>
+        <Text className={`flex-1 ${compact ? 'text-[15px]' : 'text-body-lg'} ${valueLabel ? 'text-ink' : 'text-ink/40'}`}>
           {valueLabel ?? placeholder}
         </Text>
         <Ionicons name="chevron-down" size={18} color="#6B7C74" />
@@ -122,35 +124,37 @@ export function DateField({
   label = 'Date',
   value,
   onChange,
+  compact = false,
 }: {
   label?: string;
   /** YYYY-MM-DD */
   value: string;
   onChange: (next: string) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const dateObj = useMemo(() => new Date(dateInputToIso(value)), [value]);
 
   return (
-    <View className="mb-4">
-      <FormLabel>{label}</FormLabel>
+    <View className={compact ? 'mb-2' : 'mb-4'}>
+      {compact ? null : <FormLabel>{label}</FormLabel>}
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={() => onChange(shiftDateInput(value, -1))}
-          className="h-14 w-12 items-center justify-center rounded-2xl border border-ink/15 bg-white"
+          className={`${compact ? 'h-11 w-10' : 'h-14 w-12'} items-center justify-center rounded-2xl border border-ink/15 bg-white`}
         >
           <Ionicons name="chevron-back" size={20} color="#0B3D2E" />
         </Pressable>
 
         <Pressable
           onPress={() => setOpen(true)}
-          className="h-14 flex-1 flex-row items-center justify-between rounded-2xl border border-ink/15 bg-white px-4"
+          className={`${compact ? 'h-11' : 'h-14'} flex-1 flex-row items-center justify-between rounded-2xl border border-ink/15 bg-white px-4`}
         >
           <View>
-            <Text className="text-body-lg font-semibold text-ink">
+            <Text className={`${compact ? 'text-[14px]' : 'text-body-lg'} font-semibold text-ink`}>
               {formatDateInputLabel(value)}
             </Text>
-            {value !== toDateInputValue() ? (
+            {compact ? null : value !== toDateInputValue() ? (
               <Text className="text-[12px] text-warn">Backdated entry</Text>
             ) : (
               <Text className="text-[12px] text-ink/40">Today</Text>
@@ -161,7 +165,7 @@ export function DateField({
 
         <Pressable
           onPress={() => onChange(shiftDateInput(value, 1))}
-          className="h-14 w-12 items-center justify-center rounded-2xl border border-ink/15 bg-white"
+          className={`${compact ? 'h-11 w-10' : 'h-14 w-12'} items-center justify-center rounded-2xl border border-ink/15 bg-white`}
         >
           <Ionicons name="chevron-forward" size={20} color="#0B3D2E" />
         </Pressable>
@@ -194,13 +198,18 @@ export function DateField({
 export function OutlinedInput({
   label,
   className = '',
+  compact = false,
   ...props
-}: TextInputProps & { label?: string; className?: string }) {
+}: TextInputProps & { label?: string; className?: string; compact?: boolean }) {
   return (
-    <View className={`mb-4 ${className}`}>
-      {label ? <FormLabel>{label}</FormLabel> : null}
+    <View className={`${compact ? 'mb-2' : 'mb-4'} ${className}`}>
+      {label ? (
+        <Text className={`${compact ? 'mb-1 text-[11px]' : 'mb-2 text-[13px]'} font-semibold uppercase tracking-wide text-ink/45`}>
+          {label}
+        </Text>
+      ) : null}
       <TextInput
-        className="min-h-[56px] rounded-2xl border border-ink/15 bg-white px-4 text-body-lg text-ink"
+        className={`${compact ? 'min-h-[44px] text-[15px]' : 'min-h-[56px] text-body-lg'} rounded-2xl border border-ink/15 bg-white px-4 text-ink`}
         placeholderTextColor="#8A968F"
         {...props}
       />
@@ -239,21 +248,23 @@ export function SegmentedTwo({
   right,
   value,
   onChange,
+  compact = false,
 }: {
   left: { key: string; label: string; icon?: keyof typeof Ionicons.glyphMap };
   right: { key: string; label: string; icon?: keyof typeof Ionicons.glyphMap };
   value: string;
   onChange: (key: string) => void;
+  compact?: boolean;
 }) {
   return (
-    <View className="mb-5 flex-row rounded-full bg-[#ECEAE3] p-1">
+    <View className={`${compact ? 'mb-2' : 'mb-5'} flex-row rounded-full bg-[#ECEAE3] p-1`}>
       {[left, right].map((opt) => {
         const active = value === opt.key;
         return (
           <Pressable
             key={opt.key}
             onPress={() => onChange(opt.key)}
-            className={`min-h-[48px] flex-1 flex-row items-center justify-center rounded-full px-3 ${
+            className={`${compact ? 'min-h-[40px]' : 'min-h-[48px]'} flex-1 flex-row items-center justify-center rounded-full px-3 ${
               active ? 'bg-brand' : ''
             }`}
           >

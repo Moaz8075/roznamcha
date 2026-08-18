@@ -92,37 +92,44 @@ export function PartyScreen({ initialTab = 'customers' }: { initialTab?: PartyTa
     }));
     if (tab === 'customers') return c;
     if (tab === 'suppliers') return s;
-    return [...c, ...s].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
+    return c;
   }, [customerItems, supplierItems, tab]);
 
   const youGet = customerItems
     .filter((c) => Number(c.balance) > 0)
     .reduce((sum, c) => sum + Number(c.balance), 0);
-  const youGiveCustomers = customerItems
+  const iWillPayCustomers = customerItems
     .filter((c) => Number(c.balance) < 0)
     .reduce((sum, c) => sum + Math.abs(Number(c.balance)), 0);
   const youGiveSuppliers = supplierItems
     .filter((s) => Number(s.balance) > 0)
     .reduce((sum, s) => sum + Number(s.balance), 0);
-  const purchaseTotal = supplierItems.reduce((sum, s) => sum + Math.abs(Number(s.balance)), 0);
+  const iWillGetSuppliers = supplierItems
+    .filter((s) => Number(s.balance) < 0)
+    .reduce((sum, s) => sum + Math.abs(Number(s.balance)), 0);
+  const purchaseTotal = supplierItems.reduce(
+    (sum, s) => sum + Number(s.purchaseTotal ?? 0),
+    0,
+  );
 
   const summary =
     tab === 'suppliers'
       ? {
           leftValue: String(purchaseTotal),
-          leftLabel: 'Total purchase',
-          rightValue: String(youGiveSuppliers),
-          rightLabel: "You'll Give",
+          leftLabel: 'Purchases',
+          midValue: String(youGiveSuppliers),
+          midLabel: "I'll Give",
+          rightValue: String(iWillGetSuppliers),
+          rightLabel: "I'll Get",
           leftGreen: true,
-          rightGreen: true,
+          midGreen: true,
+          rightGreen: false,
         }
       : {
-          leftValue: String(youGiveCustomers),
-          leftLabel: 'You will give',
+          leftValue: String(iWillPayCustomers),
+          leftLabel: "I'll Pay",
           rightValue: String(youGet),
-          rightLabel: 'You will get',
+          rightLabel: "You'll Get",
           leftGreen: true,
           rightGreen: false,
         };
@@ -130,12 +137,9 @@ export function PartyScreen({ initialTab = 'customers' }: { initialTab?: PartyTa
   const countLabel =
     tab === 'suppliers'
       ? `${supplierItems.length} Supplier${supplierItems.length === 1 ? '' : 's'}`
-      : tab === 'all'
-        ? `${rows.length} Parties`
-        : `${customerItems.length} Customer${customerItems.length === 1 ? '' : 's'}`;
+      : `${customerItems.length} Customer${customerItems.length === 1 ? '' : 's'}`;
 
-  const loading =
-    tab === 'suppliers' ? suppliers.isLoading : tab === 'customers' ? customers.isLoading : customers.isLoading || suppliers.isLoading;
+  const loading = tab === 'suppliers' ? suppliers.isLoading : customers.isLoading;
 
   return (
     <Screen className="bg-[#F4F4F4]">
@@ -179,13 +183,11 @@ export function PartyScreen({ initialTab = 'customers' }: { initialTab?: PartyTa
         )}
       />
 
-      {tab !== 'all' ? (
-        <PartyFab
-          label={tab === 'suppliers' ? 'ADD SUPPLIER' : 'ADD CUSTOMER'}
-          color={tab === 'suppliers' ? KHATA.green : KHATA.orange}
-          onPress={() => setCreateOpen(true)}
-        />
-      ) : null}
+      <PartyFab
+        label={tab === 'suppliers' ? 'ADD SUPPLIER' : 'ADD CUSTOMER'}
+        color={tab === 'suppliers' ? KHATA.green : KHATA.orange}
+        onPress={() => setCreateOpen(true)}
+      />
 
       <Modal visible={createOpen} animationType="slide" transparent onRequestClose={() => setCreateOpen(false)}>
         <KeyboardAvoidingView

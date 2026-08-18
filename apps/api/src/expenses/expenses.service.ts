@@ -34,7 +34,7 @@ export class ExpensesService {
       this.prisma.expense.findMany({
         where: { deletedAt: null },
         orderBy: { transactionDate: 'desc' },
-        take: 100,
+        take: 500,
       }),
       this.prisma.expense.count({ where: { deletedAt: null } }),
     ]);

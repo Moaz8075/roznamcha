@@ -84,6 +84,8 @@ export interface SupplierDto {
   notes: string | null;
   /** Derived outstanding. Positive = you owe supplier. */
   balance: MoneyString;
+  /** Sum of purchase invoices (not remaining balance). */
+  purchaseTotal: MoneyString;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -254,8 +256,15 @@ export interface DashboardSummaryDto {
   customerOutstanding: MoneyString;
   supplierOutstanding: MoneyString;
   todaySales: MoneyString;
+  todayPurchases: MoneyString;
   todayExpenses: MoneyString;
+  /** todaySales − todayPurchases − todayExpenses */
   todayProfit: MoneyString;
+  totalSales: MoneyString;
+  totalPurchases: MoneyString;
+  totalExpenses: MoneyString;
+  /** totalSales − totalPurchases − totalExpenses */
+  netProfit: MoneyString;
 }
 
 export interface CreateCustomerRequest {

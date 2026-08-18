@@ -23,7 +23,7 @@ export class SuppliersService {
         notes: dto.notes?.trim(),
       },
     });
-    return this.map(supplier, '0.0000');
+    return this.map(supplier, '0.0000', '0.0000');
   }
 
   async findAll(q?: string) {
@@ -54,20 +54,34 @@ export class SuppliersService {
           LedgerPartyType.SUPPLIER,
           s.id,
         );
-        return this.map(s, moneyStr(balance));
+        return this.map(s, moneyStr(balance), '0.0000');
       }),
     );
+
+    if (items.length) {
+      const purchaseSums = await this.prisma.purchase.groupBy({
+        by: ['supplierId'],
+        where: { deletedAt: null, supplierId: { in: items.map((s) => s.id) } },
+        _sum: { total: true },
+      });
+      const bySupplier = new Map(
+        purchaseSums.map((row) => [row.supplierId, moneyStr(row._sum.total?.toString() ?? 0)]),
+      );
+      for (const row of withBalances) {
+        row.purchaseTotal = bySupplier.get(row.id) ?? '0.0000';
+      }
+    }
 
     return paginate(withBalances, total);
   }
 
   async findOne(id: string) {
     const supplier = await this.requireActive(id);
-    const balance = await this.financial.getPartyBalance(
-      LedgerPartyType.SUPPLIER,
-      id,
-    );
-    return this.map(supplier, moneyStr(balance));
+    const [balance, purchaseTotal] = await Promise.all([
+      this.financial.getPartyBalance(LedgerPartyType.SUPPLIER, id),
+      this.sumPurchases(id),
+    ]);
+    return this.map(supplier, moneyStr(balance), purchaseTotal);
   }
 
   async update(id: string, dto: UpdateSupplierDto) {
@@ -82,11 +96,11 @@ export class SuppliersService {
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
     });
-    const balance = await this.financial.getPartyBalance(
-      LedgerPartyType.SUPPLIER,
-      id,
-    );
-    return this.map(supplier, moneyStr(balance));
+    const [balance, purchaseTotal] = await Promise.all([
+      this.financial.getPartyBalance(LedgerPartyType.SUPPLIER, id),
+      this.sumPurchases(id),
+    ]);
+    return this.map(supplier, moneyStr(balance), purchaseTotal);
   }
 
   async remove(id: string) {
@@ -106,6 +120,14 @@ export class SuppliersService {
     return supplier;
   }
 
+  private async sumPurchases(supplierId: string) {
+    const agg = await this.prisma.purchase.aggregate({
+      where: { supplierId, deletedAt: null },
+      _sum: { total: true },
+    });
+    return moneyStr(agg._sum.total?.toString() ?? 0);
+  }
+
   private map(
     s: {
       id: string;
@@ -118,6 +140,7 @@ export class SuppliersService {
       updatedAt: Date;
     },
     balance: string,
+    purchaseTotal = '0.0000',
   ) {
     return {
       id: s.id,
@@ -126,6 +149,7 @@ export class SuppliersService {
       address: s.address,
       notes: s.notes,
       balance,
+      purchaseTotal,
       isActive: s.isActive,
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.updatedAt.toISOString(),

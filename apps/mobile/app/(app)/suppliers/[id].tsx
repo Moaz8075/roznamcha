@@ -81,7 +81,7 @@ export default function SupplierDetailScreen() {
   const balance = Number(supplier.data?.balance ?? 0);
   const tone = !Number.isFinite(balance) || balance === 0 ? 'settled' : balance > 0 ? 'out' : 'in';
   const balanceLabel =
-    tone === 'settled' ? 'Settled' : tone === 'out' ? "You'll Give" : 'You will get';
+    tone === 'settled' ? 'Settled' : tone === 'out' ? "You'll Give" : "I'll Get";
 
   const openEdit = () => {
     if (!supplier.data) return;

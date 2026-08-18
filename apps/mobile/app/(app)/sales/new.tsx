@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PAYMENT_METHODS } from '@roznamcha/constants';
@@ -105,11 +105,12 @@ export default function NewSaleScreen() {
     <Screen className="bg-[#FBF9F3]">
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="gap-1 px-5 pb-10 pt-2"
+        contentContainerClassName="px-4 pb-8 pt-1"
       >
-        <DateField value={date} onChange={setDate} />
+        <DateField compact value={date} onChange={setDate} />
 
         <SelectSheet
+          compact
           searchable
           searchPlaceholder="Search customers..."
           placeholder="Select Customer"
@@ -123,9 +124,10 @@ export default function NewSaleScreen() {
         />
 
         <SelectSheet
+          compact
           searchable
           searchPlaceholder="Search products..."
-          placeholder="Select Product (Wood Type)"
+          placeholder="Select Product"
           valueLabel={selectedProduct?.name ?? null}
           options={(products.data?.items ?? []).map((p) => ({
             id: p.id,
@@ -135,10 +137,11 @@ export default function NewSaleScreen() {
           onSelect={setProductId}
         />
 
-        <View className="mb-2 flex-row gap-3">
+        <View className="flex-row gap-2">
           <View className="flex-1">
             <OutlinedInput
-              label={`Quantity${selectedProduct ? ` (${selectedProduct.unit})` : ''}`}
+              compact
+              label={selectedProduct ? `Qty (${selectedProduct.unit})` : 'Qty'}
               value={quantity}
               onChangeText={(v) => {
                 setQuantity(v);
@@ -150,52 +153,47 @@ export default function NewSaleScreen() {
           </View>
           <View className="flex-1">
             <OutlinedInput
-              label="Per piece"
+              compact
+              label="Rate"
               value={rate}
               onChangeText={(v) => {
                 setRate(v);
                 syncFromQtyRate(quantity, v);
               }}
               keyboardType="decimal-pad"
-              placeholder="0.00"
+              placeholder="0"
+            />
+          </View>
+          <View className="flex-[1.2]">
+            <OutlinedInput
+              compact
+              label="Total"
+              value={total}
+              onChangeText={(v) => {
+                setTotal(v);
+                syncFromQtyTotal(quantity, v);
+              }}
+              keyboardType="decimal-pad"
+              placeholder="0"
             />
           </View>
         </View>
 
-        <OutlinedInput
-          label="Total Amount"
-          value={total}
-          onChangeText={(v) => {
-            setTotal(v);
-            syncFromQtyTotal(quantity, v);
-          }}
-          keyboardType="decimal-pad"
-          placeholder="0.00"
-        />
-
-        <View className="mb-5 items-end rounded-3xl bg-[#ECEAE3] px-5 py-4">
-          <Text className="text-[12px] font-semibold uppercase tracking-wide text-ink/45">
-            Line total
-          </Text>
-          <Text className="mt-1 text-[26px] font-bold text-brand">{formatMoney(totalNumber)}</Text>
-        </View>
-
-        <Text className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink/45">
-          Payment Type
-        </Text>
         <SegmentedTwo
+          compact
           value={mode}
           onChange={(k) => setMode(k as 'CASH' | 'CREDIT')}
           left={{ key: 'CASH', label: 'Cash' }}
-          right={{ key: 'CREDIT', label: 'Credit / Invoice' }}
+          right={{ key: 'CREDIT', label: 'Credit' }}
         />
 
         <OutlinedInput
-          label="Details / Notes (Optional)"
+          compact
+          label="Notes (optional)"
           value={notes}
           onChangeText={setNotes}
           multiline
-          style={{ minHeight: 96, textAlignVertical: 'top', paddingTop: 14 }}
+          style={{ minHeight: 56, textAlignVertical: 'top', paddingTop: 10 }}
         />
 
         <SavePillButton
