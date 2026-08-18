@@ -7,10 +7,12 @@ services:
     plan: free
     rootDir: .
     buildCommand: npm install -g pnpm@9.15.0 && pnpm run render:build
-    startCommand: pnpm db:migrate && pnpm api:start
+    startCommand: TZ=Asia/Karachi pnpm db:migrate && TZ=Asia/Karachi pnpm api:start
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: TZ
+        value: Asia/Karachi
       # Set NODE_ENV=production on the service for runtime; build uses --prod=false
       - key: NODE_ENV
         value: production
